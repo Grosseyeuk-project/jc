@@ -25,6 +25,8 @@ export interface Lieu {
   /** [latitude, longitude] */
   coord: [number, number];
   rayon_km?: number;
+  /** Côté du nom autour du marqueur, quand des lieux voisins se gênent (défaut : dessous). */
+  etiquette?: 'haut' | 'bas' | 'gauche' | 'droite';
   certitude: Certitude;
   site: string;
   alternatives: string[];

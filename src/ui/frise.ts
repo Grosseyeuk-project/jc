@@ -4,7 +4,8 @@ import type { Actions } from '../actions';
 import { indexPlusProche, PHASES, POSITIONS, REPERES_ANNEES, U_MAX } from '../chronologie';
 import { COULEURS_PHASES } from '../carte/trace';
 import { etapes, formatAnnee } from '../donnees';
-import type { Store } from '../state';
+import { raconte } from '../evangiles';
+import type { EtatApp, Store } from '../state';
 import type { Phase } from '../types';
 
 const NOMS_PHASES: Record<Phase, string> = {
@@ -120,6 +121,24 @@ export function creerFrise(racine: HTMLElement, store: Store, actions: Actions) 
   const majEtape = (id: string | null) => {
     for (const b of jalons.querySelectorAll<HTMLButtonElement>('button')) b.classList.toggle('actif', b.dataset.etape === id);
   };
+
+  // Mode comparer : étapes absentes de l'évangile estompées, variantes signalées.
+  const majComparer = (etat: EtatApp) => {
+    const comparer = etat.mode === 'comparer';
+    racine.classList.toggle('en-comparaison', comparer);
+    marques.forEach((m, k) => {
+      m.classList.toggle('absent', comparer && !raconte(etapes[k], etat.evangile));
+      m.classList.toggle('variante', comparer && !!etapes[k].variante);
+    });
+    for (const b of jalons.querySelectorAll<HTMLButtonElement>('button')) {
+      const e = etapes.find((x) => x.id === b.dataset.etape)!;
+      b.classList.toggle('absent', comparer && !raconte(e, etat.evangile));
+    }
+  };
+  store.subscribe((etat, avant) => {
+    if (etat.mode !== avant.mode || etat.evangile !== avant.evangile) majComparer(etat);
+  });
+  majComparer(store.get());
 
   store.on('curseur', majCurseur);
   store.on('lecture', majLecture);

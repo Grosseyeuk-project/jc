@@ -4,13 +4,16 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 // MapLibre 6 charge son worker à part : Vite le construit et nous donne son adresse.
 import urlWorker from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import type { Actions } from '../actions';
-import { indexDeEtape, positionAu } from '../chronologie';
+import { indexDeEtape, positionAu, U_MAX } from '../chronologie';
+import { formatHeure } from '../passion';
+import jerusalem from '../data/jerusalem.json';
+import { indicesSelon, raconte } from '../evangiles';
 import frontieres from '../data/frontieres.json';
 import { etapeParId, etapes, formatAnnee, LIBELLE_CERTITUDE, lieuParId, lieux, villes } from '../donnees';
 import type { EtatApp, Store } from '../state';
 import type { Lieu } from '../types';
 import { creerStyle } from './style';
-import { COULEURS_PHASES, TRACE_COMPLETE, traceAu } from './trace';
+import { COULEURS_PHASES, TRACE_COMPLETE, traceAu, traceSelon } from './trace';
 
 maplibregl.setWorkerUrl(urlWorker);
 
@@ -77,6 +80,14 @@ export function creerCarte(conteneur: HTMLElement, store: Store, actions: Action
     new maplibregl.Marker({ element: el }).setLngLat(p.etiquette).addTo(carte);
   }
 
+  // Étiquettes du plan de Jérusalem (visibles en zoom rapproché, voir style.css).
+  for (const f of (jerusalem as GeoJSON.FeatureCollection).features) {
+    const p = f.properties as { type: string; nom: string; classe?: string };
+    if (p.type !== 'etiquette') continue;
+    const el = element('div', `etiquette-plan plan-${p.classe}`, p.nom);
+    new maplibregl.Marker({ element: el }).setLngLat((f.geometry as GeoJSON.Point).coordinates as [number, number]).addTo(carte);
+  }
+
   // Villes repères, sauf celles qui sont aussi des lieux d'étapes (leur marqueur porte le nom).
   const villeParId = new Map(villes.map((v) => [v.id, v]));
   for (const v of villes) {
@@ -92,14 +103,63 @@ export function creerCarte(conteneur: HTMLElement, store: Store, actions: Action
 
   // Couches dynamiques : zones, tracé en filigrane, tracé parcouru, tête du tracé.
   let pret = false;
-  const majTrace = (u: number) => {
+  const majTrace = () => {
     if (!pret) return;
-    const { parcouru, tete } = traceAu(u);
+    const { curseur, mode, evangile } = store.get();
+    // En mode comparer, on montre tout le récit de l'évangile choisi, en ne reliant que ses étapes.
+    const { parcouru, tete } = mode === 'comparer' ? traceSelon(indicesSelon(evangile), U_MAX) : traceAu(curseur);
     (carte.getSource('trace') as GeoJSONSource).setData(parcouru);
-    (carte.getSource('tete') as GeoJSONSource).setData({ type: 'Point', coordinates: tete });
+    (carte.getSource('tete') as GeoJSONSource).setData(
+      tete ? { type: 'Point', coordinates: tete } : { type: 'FeatureCollection', features: [] },
+    );
+  };
+  const majFiligrane = () => {
+    if (!pret) return;
+    const { mode, evangile } = store.get();
+    (carte.getSource('trace-complete') as GeoJSONSource).setData(
+      mode === 'comparer' ? traceSelon(indicesSelon(evangile), U_MAX).parcouru : TRACE_COMPLETE,
+    );
   };
 
   carte.on('load', () => {
+    // Plan schématique de Jérusalem vers l'an 30 : il apparaît quand on zoome sur la ville.
+    const apparition = (max: number) => ['interpolate', ['linear'], ['zoom'], 11.5, 0, 12.8, max] as never;
+    carte.addSource('jerusalem', { type: 'geojson', data: jerusalem as GeoJSON.FeatureCollection });
+    carte.addLayer({
+      id: 'jerusalem-ville',
+      type: 'fill',
+      source: 'jerusalem',
+      filter: ['==', ['get', 'type'], 'ville'],
+      paint: { 'fill-color': '#e2cfa5', 'fill-opacity': apparition(0.75) },
+    });
+    carte.addLayer({
+      id: 'jerusalem-batiments',
+      type: 'fill',
+      source: 'jerusalem',
+      filter: ['in', ['get', 'type'], ['literal', ['temple', 'edifice']]],
+      paint: { 'fill-color': ['match', ['get', 'type'], 'temple', '#d4b77c', '#c9a46a'], 'fill-opacity': apparition(0.9) },
+    });
+    carte.addLayer({
+      id: 'jerusalem-vallees',
+      type: 'line',
+      source: 'jerusalem',
+      filter: ['==', ['get', 'type'], 'vallee'],
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': '#7d978f', 'line-width': 2, 'line-dasharray': [3, 2], 'line-opacity': apparition(0.8) },
+    });
+    carte.addLayer({
+      id: 'jerusalem-murailles',
+      type: 'line',
+      source: 'jerusalem',
+      filter: ['in', ['get', 'type'], ['literal', ['ville', 'temple', 'edifice']]],
+      layout: { 'line-join': 'round' },
+      paint: {
+        'line-color': '#6b4a2b',
+        'line-width': ['match', ['get', 'type'], 'ville', 3, 1.5],
+        'line-opacity': apparition(0.9),
+      },
+    });
+
     const zones = lieux.filter((l) => l.type === 'zone');
     carte.addSource('zones', { type: 'geojson', data: { type: 'FeatureCollection', features: zones.map((z) => cercle(z)) } });
     carte.addLayer({ id: 'zones-aplat', type: 'fill', source: 'zones', paint: { 'fill-color': '#8a2f1d', 'fill-opacity': 0.07 } });
@@ -142,7 +202,8 @@ export function creerCarte(conteneur: HTMLElement, store: Store, actions: Action
       paint: { 'circle-radius': 5, 'circle-color': '#f7eedb', 'circle-stroke-color': '#7a1616', 'circle-stroke-width': 2.5 },
     });
     pret = true;
-    majTrace(store.get().curseur);
+    majFiligrane();
+    majTrace();
   });
 
   // Marqueurs : un par emplacement (Golgotha et le tombeau partagent le Saint-Sépulcre).
@@ -152,7 +213,7 @@ export function creerCarte(conteneur: HTMLElement, store: Store, actions: Action
     groupes.set(cle, [...(groupes.get(cle) ?? []), lieu]);
   }
 
-  const marqueurs: { el: HTMLElement; lieux: Set<string>; premiere: number }[] = [];
+  const marqueurs: { el: HTMLElement; lieux: Set<string>; premiere: number; indices: number[] }[] = [];
   const popup = new maplibregl.Popup({ closeButton: false, offset: 14, className: 'popup-lieu', maxWidth: '280px' });
   for (const groupe of groupes.values()) {
     const ids = new Set(groupe.map((l) => l.id));
@@ -161,7 +222,8 @@ export function creerCarte(conteneur: HTMLElement, store: Store, actions: Action
     const jalon = etapesIci.some((e) => e.jalon);
     const debattu = groupe.some((l) => l.certitude === 'debattu');
     const ville = villeParId.get(groupe[0].id);
-    const classes = ['marqueur', jalon ? 'jalon' : 'simple', debattu ? 'certitude-debattu' : '', ville ? `rang-${ville.rang}` : ''];
+    const cote = groupe[0].etiquette ? `nom-${groupe[0].etiquette}` : '';
+    const classes = ['marqueur', jalon ? 'jalon' : 'simple', debattu ? 'certitude-debattu' : '', ville ? `rang-${ville.rang}` : '', cote];
     const bouton = element('button', classes.filter(Boolean).join(' ')) as HTMLButtonElement;
     bouton.type = 'button';
     bouton.setAttribute('aria-label', `${nom} — ${etapesIci.map((e) => e.titre).join(', ')}`);
@@ -194,20 +256,64 @@ export function creerCarte(conteneur: HTMLElement, store: Store, actions: Action
       popup.setLngLat(versLngLat(groupe[0].coord)).setDOMContent(liste).addTo(carte);
     });
     new maplibregl.Marker({ element: bouton, anchor: 'center' }).setLngLat(versLngLat(groupe[0].coord)).addTo(carte);
-    marqueurs.push({ el: bouton, lieux: ids, premiere: Math.min(...etapesIci.map((e) => indexDeEtape(e.id))) });
+    const indices = etapesIci.map((e) => indexDeEtape(e.id));
+    marqueurs.push({ el: bouton, lieux: ids, premiere: Math.min(...indices), indices });
   }
+
+  // Résurrection : apparitions numérotées en doré. Le tombeau vide et l'Ascension
+  // ne sont pas des apparitions ; leurs lieux passent simplement au doré.
+  const apparitions = etapes.filter((e) => e.phase === 'resurrection' && e.id !== 'tombeau-vide' && e.id !== 'ascension');
+  const pastilles: { el: HTMLElement; i: number }[] = [];
+  const parLieu = new Map<string, typeof apparitions>();
+  for (const e of apparitions) parLieu.set(e.lieu, [...(parLieu.get(e.lieu) ?? []), e]);
+  for (const [lieuId, liste] of parLieu) {
+    liste.forEach((e, k) => {
+      const n = apparitions.indexOf(e) + 1;
+      const el = element('button', 'apparition', String(n)) as HTMLButtonElement;
+      el.type = 'button';
+      el.title = `Apparition ${n} : ${e.titre}`;
+      el.setAttribute('aria-label', el.title);
+      el.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        actions.allerA(e.id);
+      });
+      // Plusieurs apparitions au même lieu (Jérusalem) : pastilles côte à côte.
+      const dx = (k - (liste.length - 1) / 2) * 20;
+      new maplibregl.Marker({ element: el, anchor: 'center', offset: [dx + 12, -16] })
+        .setLngLat(versLngLat(lieuParId.get(lieuId)!.coord))
+        .addTo(carte);
+      pastilles.push({ el, i: indexDeEtape(e.id) });
+    });
+  }
+  const indicesResurrection = etapes.flatMap((e, i) => (e.phase === 'resurrection' ? [i] : []));
 
   // --- Abonnements à l'état central ---
 
   const majCurseur = (u: number) => {
-    majTrace(u);
+    majTrace();
     // Un lieu est « à venir » tant qu'aucune de ses étapes n'est atteinte.
-    const { i } = positionAu(u);
+    // En mode comparer, tout le récit est visible : rien n'est « à venir ».
+    const { i } = store.get().mode === 'comparer' ? { i: etapes.length - 1 } : positionAu(u);
     for (const m of marqueurs) {
       const aVenir = m.premiere > i;
       m.el.classList.toggle('a-venir', aVenir);
       m.el.title = aVenir ? `À venir (${formatAnnee(etapes[m.premiere].annee)})` : '';
+      m.el.classList.toggle('dore', m.indices.some((k) => k <= i && indicesResurrection.includes(k)));
     }
+    for (const p of pastilles) p.el.hidden = p.i > i;
+  };
+
+  // Mode comparer : lieux absents de l'évangile estompés, lieux à variante cerclés.
+  const majComparer = (etat: EtatApp) => {
+    const comparer = etat.mode === 'comparer';
+    for (const m of marqueurs) {
+      const ici = m.indices.map((k) => etapes[k]);
+      m.el.classList.toggle('absent', comparer && !ici.some((e) => raconte(e, etat.evangile)));
+      m.el.classList.toggle('variante', comparer && ici.some((e) => e.variante));
+    }
+    for (const p of pastilles) p.el.classList.toggle('absent', comparer && !raconte(etapes[p.i], etat.evangile));
+    majFiligrane();
+    majCurseur(etat.curseur);
   };
 
   const majEtape = (id: string | null, etat: EtatApp) => {
@@ -222,7 +328,7 @@ export function creerCarte(conteneur: HTMLElement, store: Store, actions: Action
       carte.easeTo({ center: centre, zoom: lieu.id === 'egypte' ? 6 : 7.6, duration: 1400, essential: true });
       return;
     }
-    const zoom = lieu.id === 'egypte' ? 7 : distanceKm(lieu.coord, JERUSALEM) < 3 ? 12.5 : lieu.type === 'zone' ? 9.5 : 10.5;
+    const zoom = lieu.id === 'egypte' ? 7 : distanceKm(lieu.coord, JERUSALEM) < 3 ? 14.3 : lieu.type === 'zone' ? 9.5 : 10.5;
     carte.flyTo({ center: centre, zoom, speed: 0.9, curve: 1.5, essential: true });
   };
 
@@ -241,7 +347,7 @@ export function creerCarte(conteneur: HTMLElement, store: Store, actions: Action
     cartouche.append(
       element('span', 'annotation-numero', String(etape.ordre)),
       element('span', 'annotation-titre', etape.titre),
-      element('span', 'annotation-date', etape.date),
+      element('span', 'annotation-date', formatHeure(etape) ? `${etape.date} · ${formatHeure(etape)}` : etape.date),
     );
     cartouche.style.setProperty('--couleur', COULEURS_PHASES[etape.phase]);
     // Relance l'animation d'apparition.
@@ -255,6 +361,7 @@ export function creerCarte(conteneur: HTMLElement, store: Store, actions: Action
   store.on('etapeActive', majEtape);
   store.subscribe((etat, avant) => {
     if (etat.etapeActive !== avant.etapeActive || etat.mode !== avant.mode) majAnnotation(etat);
+    if (etat.mode !== avant.mode || etat.evangile !== avant.evangile) majComparer(etat);
   });
   majCurseur(store.get().curseur);
 

@@ -14,7 +14,7 @@ Spécification complète : le doc « Sur les traces de Jésus — Cadrage » (cl
 - Passion (étapes 34 à 39) : zoom heure par heure sur un plan de Jérusalem (champ `heures`).
 - Résurrection et Ascension : marqueur doré, apparitions numérotées.
 - Parcours guidé : caméra qui suit l'étape, précédent/suivant, contexte historique puis méditation puis citations.
-- Mode comparer : sélecteur d'évangile (Mt, Mc, Lc, Jn) ; on surligne toutes les étapes dont le champ `variante` est rempli dans `etapes.json` (19 étapes : 5, 6, 7, 10, 11, 12, 13, 17, 18, 19, 21, 30, 32, 34, 36, 37, 40, 42, 45, 46). Le champ fait foi, pas une liste figée.
+- Mode comparer : sélecteur d'évangile (Mt, Mc, Lc, Jn) ; on surligne toutes les étapes dont le champ `variante` est rempli dans `etapes.json` (19 étapes : 5, 6, 7, 10, 11, 13, 17, 18, 19, 21, 30, 32, 34, 36, 37, 40, 42, 45, 46). Le champ fait foi, pas une liste figée.
 - Technique : Vite + TypeScript, MapLibre GL 6 (choix confirmé), JSON statique, aucun serveur. Étiquettes en HTML (pas de serveur de glyphes).
 
 ## Données
@@ -51,11 +51,20 @@ Commandes : `npm run dev`, `npm test`, `npm run build`, `npm run geo` (re-télé
 - Cartouche sur la carte (numéro, titre, date) pendant le parcours.
 - En mode explorer, la fiche affiche aussi les trois parties.
 
-Jalons suivants : 4) mode comparer et zoom Passion (plan de Jérusalem : les lieux s'y chevauchent encore) ; 5) phase 2.
+## Quatrième jalon : comparer, Passion, Résurrection (fait)
+
+- Onglets de mode : Explorer, Parcours guidé, Comparer.
+- Comparer (`src/evangiles.ts`) : choix de Mt, Mc, Lc ou Jn ; le tracé ne relie que les étapes de cet évangile ; les lieux et graduations absents s'estompent ; les étapes à variante sont cerclées sur la carte et marquées d'un losange sur la frise ; la fiche montre un tableau « Selon les évangiles » et l'encart « Ce qui diffère » ; liste des 19 récits qui diffèrent.
+- Passion (`src/passion.ts`, `src/ui/horloge.ts`) : réglette du jeudi 18 h au vendredi 18 h (nuit ombrée, heures supposées) dès qu'une étape 34-39 est active ; heure dans la fiche et le cartouche.
+- Plan de Jérusalem vers l'an 30 (`src/data/jerusalem.json`) : murailles (Golgotha hors les murs), esplanade du Temple, Antonia, palais d'Hérode, vallées ; il apparaît à partir du zoom 12. Côté des noms réglé par lieu (champ `etiquette` de `lieux.json`) pour éviter les chevauchements.
+- Résurrection : lieux dorés une fois atteints, apparitions numérotées de 1 à 5 (pastilles dorées cliquables).
+- Les marqueurs MapLibre portent une `opacity` en ligne : pour estomper, utiliser `filter: opacity()`.
+
+Jalons suivants : 5) phase 2 (les apôtres, sur le même moteur).
 
 ## Points encore ouverts
 
-- Tracé des frontières antiques à faire relire par Vincent.
+- Tracé des frontières antiques et plan schématique de Jérusalem à faire relire par Vincent.
 - Textes d'histoire et de méditation des 46 étapes, et choix des citations, à faire relire par Vincent (premier jet dans `textes.json`).
 - Mer Morte : contour actuel (Natural Earth), coupé en deux bassins ; dans l'Antiquité elle était plus grande et d'un seul tenant. À redessiner si besoin.
-- Relief limité au zoom 9 : flou sur Jérusalem en zoom rapproché. Le plan de Jérusalem (jalon 4) prendra le relais.
+- Relief limité au zoom 9 : flou en zoom rapproché ; à Jérusalem, le plan schématique prend le relais.

@@ -17,13 +17,13 @@ const ECHANTILLONS = 32;
 type Point = [number, number];
 
 /** [lat, lon] → [lon, lat] */
-const lngLat = (id: string): Point => {
+export const lngLat = (id: string): Point => {
   const [lat, lon] = lieuParId.get(id)!.coord;
   return [lon, lat];
 };
 
 /** Arc de A vers B, bombé vers la droite du sens de marche : un aller-retour trace deux arcs distincts. */
-function arc(a: Point, b: Point): Point[] {
+export function arc(a: Point, b: Point): Point[] {
   const dx = b[0] - a[0];
   const dy = b[1] - a[1];
   if (Math.hypot(dx, dy) < 1e-6) return [a, b];
@@ -73,3 +73,32 @@ export const TRACE_COMPLETE: GeoJSON.FeatureCollection = {
   type: 'FeatureCollection',
   features: SEGMENTS.map((s) => ({ type: 'Feature', properties: { phase: s.phase }, geometry: { type: 'LineString', coordinates: s.points } })),
 };
+
+const cacheSelon = new Map<string, { i: number; phase: Phase; points: Point[] }[]>();
+
+/**
+ * Mode comparer : le voyage tel qu'un seul évangile le raconte, en reliant
+ * ses étapes dans l'ordre harmonisé (`indices` : étapes racontées).
+ */
+export function traceSelon(indices: number[], u: number): { parcouru: GeoJSON.FeatureCollection; tete: Point | null } {
+  const cle = indices.join(',');
+  let segments = cacheSelon.get(cle);
+  if (!segments) {
+    segments = indices.slice(1).map((j, k) => ({
+      i: j,
+      phase: etapes[j].phase,
+      points: arc(lngLat(etapes[indices[k]].lieu), lngLat(etapes[j].lieu)),
+    }));
+    cacheSelon.set(cle, segments);
+  }
+  const { i } = positionAu(u);
+  const atteints = segments.filter((s) => s.i <= i);
+  const derniere = [...indices].reverse().find((j) => j <= i);
+  return {
+    parcouru: {
+      type: 'FeatureCollection',
+      features: atteints.map((s) => ({ type: 'Feature', properties: { phase: s.phase }, geometry: { type: 'LineString', coordinates: s.points } })),
+    },
+    tete: derniere === undefined ? null : lngLat(etapes[derniere].lieu),
+  };
+}

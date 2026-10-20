@@ -7,9 +7,11 @@ import './style.css';
 import { creerActions, store } from './actions';
 import { creerCarte } from './carte/carte';
 import { creerFrise } from './ui/frise';
+import { creerHorloge } from './ui/horloge';
 import { creerPanneau } from './ui/panneau';
 
 const actions = creerActions(store);
 const carte = creerCarte(document.getElementById('carte')!, store, actions);
 creerFrise(document.getElementById('frise')!, store, actions);
+creerHorloge(document.getElementById('horloge')!, store, actions);
 creerPanneau(document.getElementById('panneau')!, store, actions, carte);

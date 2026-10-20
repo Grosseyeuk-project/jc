@@ -73,7 +73,7 @@ describe('formatAnnee', () => {
 
 describe('store', () => {
   it('prévient les abonnés seulement quand une valeur change', () => {
-    const s = creerStore({ annee: 0, curseur: 0, etapeActive: null, lecture: false, mode: 'explorer', section: 0 });
+    const s = creerStore({ annee: 0, curseur: 0, etapeActive: null, lecture: false, mode: 'explorer', section: 0, evangile: 'Lc' });
     const vus: (string | null)[] = [];
     s.on('etapeActive', (v) => vus.push(v));
     s.set({ annee: 5 });
@@ -84,7 +84,7 @@ describe('store', () => {
   });
 
   it('permet de se désabonner', () => {
-    const s = creerStore({ annee: 0, curseur: 0, etapeActive: null, lecture: false, mode: 'explorer', section: 0 });
+    const s = creerStore({ annee: 0, curseur: 0, etapeActive: null, lecture: false, mode: 'explorer', section: 0, evangile: 'Lc' });
     let n = 0;
     const stop = s.subscribe(() => n++);
     s.set({ mode: 'comparer' });

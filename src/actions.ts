@@ -2,7 +2,8 @@
 // (curseur, année et étape active vont toujours ensemble).
 import { anneeAu, indexDeEtape, indexPlusProche, POSITIONS, U_MAX, uDeEtape } from './chronologie';
 import { etapes } from './donnees';
-import { creerStore, type Section, type Store } from './state';
+import type { Evangile } from './evangiles';
+import { creerStore, type Mode, type Section, type Store } from './state';
 
 // On ouvre sur le voyage complet : tout le tracé est visible.
 export const store = creerStore({
@@ -12,6 +13,7 @@ export const store = creerStore({
   lecture: false,
   mode: 'explorer',
   section: 0,
+  evangile: 'Lc',
 });
 
 const reduitMouvement = () =>
@@ -113,6 +115,18 @@ export function creerActions(s: Store) {
     quitterParcours() {
       actions.pause();
       s.set({ mode: 'explorer', section: 0 });
+    },
+
+    /** Change de mode depuis les onglets du panneau. */
+    choisirMode(mode: Mode) {
+      if (mode === s.get().mode) return;
+      if (mode === 'parcours') return actions.commencerParcours(s.get().etapeActive ?? undefined);
+      actions.pause();
+      s.set({ mode, section: 0 });
+    },
+
+    choisirEvangile(evangile: Evangile) {
+      s.set({ evangile });
     },
 
     avancer() {
