@@ -48,8 +48,6 @@ export interface Ville {
 export interface TexteEtape {
   /** Contexte historique, factuel. */
   histoire: string;
-  /** Méditation courte. */
-  meditation: string;
   /** Références des citations (Louis Segond 1910), ex. « Lc 1:30-31 ». */
   citations: string[];
 }

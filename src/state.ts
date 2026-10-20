@@ -3,7 +3,7 @@
 import type { Evangile } from './evangiles';
 
 export type Mode = 'explorer' | 'parcours' | 'comparer';
-export type Section = 0 | 1 | 2;
+export type Section = 0 | 1;
 export type { Evangile };
 
 export interface EtatApp {
@@ -16,7 +16,7 @@ export interface EtatApp {
   /** Lecture automatique du tracé en cours. */
   lecture: boolean;
   mode: Mode;
-  /** Parcours guidé : partie affichée de l'étape (0 contexte, 1 méditation, 2 citations). */
+  /** Parcours guidé : partie affichée de l'étape (0 contexte historique, 1 citations). */
   section: Section;
   /** Mode comparer : évangile sélectionné. */
   evangile: Evangile;

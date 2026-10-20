@@ -9,8 +9,7 @@ const echapper = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
 const SECTIONS: { titre: string; suivant: string }[] = [
-  { titre: 'Contexte historique', suivant: 'Méditation' },
-  { titre: 'Méditation', suivant: 'Citations' },
+  { titre: 'Contexte historique', suivant: 'Citations' },
   { titre: 'Citations', suivant: 'Étape suivante' },
 ];
 
@@ -226,7 +225,6 @@ export function creerPanneau(racine: HTMLElement, store: Store, actions: Actions
       progression.querySelector('span')!.style.width = `${(e.ordre / etapes.length) * 100}%`;
       const corps = [
         `<p class="fiche-histoire">${echapper(t.histoire)}</p>${annexes(e)}`,
-        `<p class="fiche-meditation">${echapper(t.meditation)}</p>`,
         blocCitations(e),
       ][section];
       fiche.innerHTML = `
@@ -243,7 +241,7 @@ export function creerPanneau(racine: HTMLElement, store: Store, actions: Actions
       }
       precedente.textContent = section > 0 ? `‹ ${SECTIONS[section - 1].titre}` : '‹ Étape précédente';
       precedente.disabled = section === 0 && e.ordre === 1;
-      const fin = section === 2 && e.ordre === etapes.length;
+      const fin = section === SECTIONS.length - 1 && e.ordre === etapes.length;
       suivante.textContent = fin ? 'Fin du parcours' : `${SECTIONS[section].suivant} ›`;
       suivante.disabled = fin;
       return;
@@ -262,8 +260,6 @@ export function creerPanneau(racine: HTMLElement, store: Store, actions: Actions
         <h3>Contexte historique</h3>
         <p class="fiche-histoire">${echapper(t.histoire)}</p>
         ${annexes(e)}
-        <h3>Méditation</h3>
-        <p class="fiche-meditation">${echapper(t.meditation)}</p>
         <h3>Citations</h3>
         ${blocCitations(e)}`;
     }

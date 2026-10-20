@@ -13,7 +13,7 @@ Spécification complète : le doc « Sur les traces de Jésus — Cadrage » (cl
 - Curseur : frise de 1 av. J.-C. à 30 à échelle élargie sur le ministère, avec jalons cliquables (`jalon: true`). Le tracé s'anime avec le curseur et les étapes sont cliquables.
 - Passion (étapes 34 à 39) : zoom heure par heure sur un plan de Jérusalem (champ `heures`).
 - Résurrection et Ascension : marqueur doré, apparitions numérotées.
-- Parcours guidé : caméra qui suit l'étape, précédent/suivant, contexte historique puis méditation puis citations.
+- Parcours guidé : caméra qui suit l'étape, précédent/suivant, contexte historique puis citations (la méditation a été retirée à la demande de Vincent).
 - Mode comparer : sélecteur d'évangile (Mt, Mc, Lc, Jn) ; on surligne toutes les étapes dont le champ `variante` est rempli dans `etapes.json` (19 étapes : 5, 6, 7, 10, 11, 13, 17, 18, 19, 21, 30, 32, 34, 36, 37, 40, 42, 45, 46). Le champ fait foi, pas une liste figée.
 - Technique : Vite + TypeScript, MapLibre GL 6 (choix confirmé), JSON statique, aucun serveur. Étiquettes en HTML (pas de serveur de glyphes).
 
@@ -24,7 +24,7 @@ Spécification complète : le doc « Sur les traces de Jésus — Cadrage » (cl
 - `src/data/villes.json` : villes repères (sources citées), `rang` 1 à 3 pour la densité selon le zoom.
 - `src/data/frontieres.json` : régions vers l'an 30, tracées à la main (GeoJSON, [lon, lat]).
 - `public/geo/` et `public/relief/` : Natural Earth 1:10m et tuiles d'altitude Terrarium, produits par `npm run geo`.
-- `src/data/textes.json` : par étape, `histoire` (factuelle), `meditation` (courte) et `citations` (références, 1 à 3, prises dans les références de l'étape). Typographie française (espaces fines insécables).
+- `src/data/textes.json` : par étape, `histoire` (factuelle) et `citations` (références, 1 à 3, prises dans les références de l'étape). Typographie française (espaces fines insécables).
 - `src/data/citations-lsg.json` : texte Louis Segond 1910 des citations, généré par `npm run citations` (ne pas éditer à la main). Source : dépôt GitHub BibleCorps/FRA-B-LSG1910-PD-UBS (domaine public), figé sur le commit 0a17bed. Les coupes d'extrait sont signalées par « … » à l'affichage.
 
 ## Premier jalon : socle carte (fait)
@@ -46,10 +46,10 @@ Commandes : `npm run dev`, `npm test`, `npm run build`, `npm run geo` (re-télé
 
 ## Troisième jalon : parcours guidé et annotations (fait)
 
-- Mode `parcours` : pour chaque étape, contexte historique, puis méditation, puis citations (champ `section` de l'état), puis étape suivante. Le tracé s'allonge et la caméra suit pendant le passage d'une étape à l'autre.
+- Mode `parcours` : pour chaque étape, contexte historique, puis citations (champ `section` de l'état), puis étape suivante. Le tracé s'allonge et la caméra suit pendant le passage d'une étape à l'autre.
 - Barre de progression, « Quitter le parcours », clavier ← → et Échap. On peut démarrer depuis l'étape affichée.
 - Cartouche sur la carte (numéro, titre, date) pendant le parcours.
-- En mode explorer, la fiche affiche aussi les trois parties.
+- En mode explorer, la fiche affiche aussi les deux parties.
 
 ## Quatrième jalon : comparer, Passion, Résurrection (fait)
 
@@ -65,6 +65,6 @@ Jalons suivants : 5) phase 2 (les apôtres, sur le même moteur).
 ## Points encore ouverts
 
 - Tracé des frontières antiques et plan schématique de Jérusalem à faire relire par Vincent.
-- Textes d'histoire et de méditation des 46 étapes, et choix des citations, à faire relire par Vincent (premier jet dans `textes.json`).
+- Textes d'histoire des 46 étapes, et choix des citations, à faire relire par Vincent (premier jet dans `textes.json`).
 - Mer Morte : contour actuel (Natural Earth), coupé en deux bassins ; dans l'Antiquité elle était plus grande et d'un seul tenant. À redessiner si besoin.
 - Relief limité au zoom 9 : flou en zoom rapproché ; à Jérusalem, le plan schématique prend le relais.

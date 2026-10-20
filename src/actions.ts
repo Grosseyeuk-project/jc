@@ -104,7 +104,7 @@ export function creerActions(s: Store) {
       if (s.get().lecture) s.set({ lecture: false });
     },
 
-    // --- Parcours guidé : contexte, puis méditation, puis citations, puis étape suivante. ---
+    // --- Parcours guidé : contexte historique, puis citations, puis étape suivante. ---
 
     /** Démarre le parcours à l'étape donnée (par défaut l'Annonciation). */
     commencerParcours(etapeId: string = etapes[0].id) {
@@ -132,7 +132,7 @@ export function creerActions(s: Store) {
     avancer() {
       const { section, etapeActive } = s.get();
       if (!etapeActive) return actions.commencerParcours();
-      if (section < 2) s.set({ section: (section + 1) as Section });
+      if (section < 1) s.set({ section: (section + 1) as Section });
       else actions.decaler(1);
     },
 
@@ -140,7 +140,7 @@ export function creerActions(s: Store) {
       const { section, etapeActive } = s.get();
       if (!etapeActive) return;
       if (section > 0) s.set({ section: (section - 1) as Section });
-      else if (indexDeEtape(etapeActive) > 0) actions.allerA(etapes[indexDeEtape(etapeActive) - 1].id, 2);
+      else if (indexDeEtape(etapeActive) > 0) actions.allerA(etapes[indexDeEtape(etapeActive) - 1].id, 1);
     },
   };
   return actions;

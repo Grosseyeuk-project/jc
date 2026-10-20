@@ -24,11 +24,11 @@ describe('textes.json', () => {
     expect(Object.keys(textes).sort()).toEqual(etapes.map((e) => e.id).sort());
   });
 
-  it('a pour chaque étape une histoire, une méditation courte et 1 à 3 citations', () => {
+  it('a pour chaque étape une histoire et 1 à 3 citations, sans méditation', () => {
     for (const e of etapes) {
       const t = textes[e.id];
       expect(t.histoire.length, e.id).toBeGreaterThan(100);
-      expect(t.meditation.length, e.id).toBeLessThan(200);
+      expect(t, e.id).not.toHaveProperty('meditation');
       expect(t.citations.length, e.id).toBeGreaterThanOrEqual(1);
       expect(t.citations.length, e.id).toBeLessThanOrEqual(3);
     }
