@@ -1,11 +1,16 @@
 import etapesBrutes from './data/etapes.json';
 import lieuxBruts from './data/lieux.json';
 import villesBrutes from './data/villes.json';
-import type { Etape, Lieu, Ville } from './types';
+import textesBruts from './data/textes.json';
+import citationsLsg from './data/citations-lsg.json';
+import type { Etape, Lieu, TexteEtape, Ville } from './types';
 
 export const etapes = etapesBrutes as Etape[];
 export const lieux = lieuxBruts as Lieu[];
 export const villes = villesBrutes as Ville[];
+export const textes = textesBruts as Record<string, TexteEtape>;
+/** Texte Louis Segond 1910 de chaque citation, extrait par scripts/extraire-citations.mjs. */
+export const citations = citationsLsg as Record<string, string>;
 
 export const jalons = etapes.filter((e) => e.jalon);
 export const lieuParId = new Map(lieux.map((l) => [l.id, l]));

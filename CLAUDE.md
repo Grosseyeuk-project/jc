@@ -24,7 +24,8 @@ Spécification complète : le doc « Sur les traces de Jésus — Cadrage » (cl
 - `src/data/villes.json` : villes repères (sources citées), `rang` 1 à 3 pour la densité selon le zoom.
 - `src/data/frontieres.json` : régions vers l'an 30, tracées à la main (GeoJSON, [lon, lat]).
 - `public/geo/` et `public/relief/` : Natural Earth 1:10m et tuiles d'altitude Terrarium, produits par `npm run geo`.
-- `src/data/textes.json` : à créer. Par étape : `histoire`, `meditation`, `citations` (Louis Segond 1910). Rédaction en français, factuelle côté histoire, courte côté méditation.
+- `src/data/textes.json` : par étape, `histoire` (factuelle), `meditation` (courte) et `citations` (références, 1 à 3, prises dans les références de l'étape). Typographie française (espaces fines insécables).
+- `src/data/citations-lsg.json` : texte Louis Segond 1910 des citations, généré par `npm run citations` (ne pas éditer à la main). Source : dépôt GitHub BibleCorps/FRA-B-LSG1910-PD-UBS (domaine public), figé sur le commit 0a17bed. Les coupes d'extrait sont signalées par « … » à l'affichage.
 
 ## Premier jalon : socle carte (fait)
 
@@ -43,12 +44,18 @@ Commandes : `npm run dev`, `npm test`, `npm run build`, `npm run geo` (re-télé
 - `src/ui/frise.ts` : frise sous la carte (phases, graduation par étape, jalons cliquables, repères d'années, bouton lecture). Clavier : flèches = étape précédente/suivante, Début/Fin.
 - `lieux.json` couvre les 30 lieux des 46 étapes. Les lieux qui sont aussi des villes repères portent le nom de la ville.
 
-Jalons suivants : 3) parcours guidé et annotations ; 4) mode comparer et zoom Passion (plan de Jérusalem : les lieux s'y chevauchent encore) ; 5) phase 2.
+## Troisième jalon : parcours guidé et annotations (fait)
+
+- Mode `parcours` : pour chaque étape, contexte historique, puis méditation, puis citations (champ `section` de l'état), puis étape suivante. Le tracé s'allonge et la caméra suit pendant le passage d'une étape à l'autre.
+- Barre de progression, « Quitter le parcours », clavier ← → et Échap. On peut démarrer depuis l'étape affichée.
+- Cartouche sur la carte (numéro, titre, date) pendant le parcours.
+- En mode explorer, la fiche affiche aussi les trois parties.
+
+Jalons suivants : 4) mode comparer et zoom Passion (plan de Jérusalem : les lieux s'y chevauchent encore) ; 5) phase 2.
 
 ## Points encore ouverts
 
-- Source du texte Louis Segond 1910 à retenir pour les citations.
 - Tracé des frontières antiques à faire relire par Vincent.
-- Textes d'histoire et de méditation pour les 46 étapes à faire relire par Vincent.
+- Textes d'histoire et de méditation des 46 étapes, et choix des citations, à faire relire par Vincent (premier jet dans `textes.json`).
 - Mer Morte : contour actuel (Natural Earth), coupé en deux bassins ; dans l'Antiquité elle était plus grande et d'un seul tenant. À redessiner si besoin.
 - Relief limité au zoom 9 : flou sur Jérusalem en zoom rapproché. Le plan de Jérusalem (jalon 4) prendra le relais.

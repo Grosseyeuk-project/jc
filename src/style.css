@@ -14,6 +14,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 html, body {
   margin: 0;
@@ -502,3 +503,130 @@ button:focus-visible { outline: 2px solid var(--rouge); outline-offset: 2px; }
 .frise-curseur:focus-visible { outline: none; }
 .frise-curseur:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--rouge); outline-offset: 2px; }
 .frise-curseur:focus-visible::-moz-range-thumb { outline: 2px solid var(--rouge); outline-offset: 2px; }
+
+/* ---------- Parcours guidé ---------- */
+
+.lancer-parcours {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  font: 600 1.05rem var(--titre);
+  letter-spacing: 0.02em;
+  color: var(--parchemin-clair);
+  background: var(--rouge);
+  border: 0;
+  border-radius: 20px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+.lancer-parcours:hover { filter: brightness(1.12); }
+
+.bandeau-parcours {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+.progression {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bord);
+  overflow: hidden;
+}
+.progression span {
+  display: block;
+  height: 100%;
+  background: var(--rouge);
+  transition: width 0.5s ease;
+}
+.quitter {
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--encre-douce);
+  background: none;
+  border: 0;
+  padding: 2px 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.fiche-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.fiche h3 {
+  font-family: var(--titre);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 16px 0 4px;
+  color: var(--sepia);
+}
+.fiche-histoire, .fiche-meditation { max-width: 62ch; }
+.fiche-meditation { font-style: italic; font-size: 1.08rem; }
+
+.onglets {
+  display: flex;
+  gap: 4px;
+  list-style: none;
+  margin: 14px 0 10px;
+  padding: 0;
+  border-bottom: 1px solid var(--bord);
+}
+.onglets button {
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--encre-douce);
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+.onglets button.actif { color: var(--rouge); border-bottom-color: var(--rouge); font-weight: 600; }
+.fiche-corps { animation: apparition 0.35s ease-out; }
+
+.citation { margin: 10px 0 14px; }
+.citation blockquote {
+  margin: 0;
+  padding-left: 14px;
+  border-left: 2px solid var(--sepia);
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+.citation figcaption {
+  margin-top: 4px;
+  padding-left: 14px;
+  font-size: 0.85rem;
+  color: var(--sepia);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Cartouche sur la carte. */
+.annotation {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 8px;
+  align-items: baseline;
+  max-width: 240px;
+  padding: 6px 10px 7px;
+  background: var(--parchemin-clair);
+  border: 1px solid var(--bord);
+  border-top: 3px solid var(--couleur, var(--rouge));
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(59, 42, 26, 0.25);
+  font-family: var(--texte);
+  pointer-events: none;
+}
+.annotation.apparait { animation: apparition 0.5s ease-out; }
+.annotation-numero {
+  grid-row: span 2;
+  font: 600 1.4rem/1 var(--titre);
+  color: var(--couleur, var(--rouge));
+  font-variant-numeric: tabular-nums;
+}
+.annotation-titre { font: 600 1rem/1.15 var(--titre); color: var(--encre); }
+.annotation-date { font-size: 0.8rem; font-style: italic; color: var(--encre-douce); }
+@media (prefers-reduced-motion: reduce) {
+  .annotation.apparait, .fiche-corps { animation: none; }
+}

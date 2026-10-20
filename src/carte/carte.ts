@@ -226,8 +226,36 @@ export function creerCarte(conteneur: HTMLElement, store: Store, actions: Action
     carte.flyTo({ center: centre, zoom, speed: 0.9, curve: 1.5, essential: true });
   };
 
+  // Parcours guidé : un cartouche annote l'étape sur la carte.
+  const cartouche = element('div', 'annotation');
+  cartouche.setAttribute('aria-hidden', 'true');
+  const annotation = new maplibregl.Marker({ element: cartouche, anchor: 'bottom', offset: [0, -16] });
+  const majAnnotation = (etat: EtatApp) => {
+    const etape = etat.etapeActive ? etapeParId.get(etat.etapeActive) : undefined;
+    const lieu = etape ? lieuParId.get(etape.lieu) : undefined;
+    if (etat.mode !== 'parcours' || !etape || !lieu) {
+      annotation.remove();
+      return;
+    }
+    cartouche.innerHTML = '';
+    cartouche.append(
+      element('span', 'annotation-numero', String(etape.ordre)),
+      element('span', 'annotation-titre', etape.titre),
+      element('span', 'annotation-date', etape.date),
+    );
+    cartouche.style.setProperty('--couleur', COULEURS_PHASES[etape.phase]);
+    // Relance l'animation d'apparition.
+    cartouche.classList.remove('apparait');
+    void cartouche.offsetWidth;
+    cartouche.classList.add('apparait');
+    annotation.setLngLat(versLngLat(lieu.coord)).addTo(carte);
+  };
+
   store.on('curseur', majCurseur);
   store.on('etapeActive', majEtape);
+  store.subscribe((etat, avant) => {
+    if (etat.etapeActive !== avant.etapeActive || etat.mode !== avant.mode) majAnnotation(etat);
+  });
   majCurseur(store.get().curseur);
 
   return {

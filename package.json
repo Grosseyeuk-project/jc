@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "geo": "node scripts/preparer-geo.mjs"
+    "geo": "node scripts/preparer-geo.mjs",
+    "citations": "node scripts/extraire-citations.mjs"
   },
   "dependencies": {
     "@fontsource/cormorant-garamond": "^5.3.0",

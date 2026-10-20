@@ -2,6 +2,7 @@
 // aucun composant ne se parle directement.
 
 export type Mode = 'explorer' | 'parcours' | 'comparer';
+export type Section = 0 | 1 | 2;
 
 export interface EtatApp {
   /** Année affichée (négative = av. J.-C., 0 = Nativité par convention). */
@@ -13,6 +14,8 @@ export interface EtatApp {
   /** Lecture automatique du tracé en cours. */
   lecture: boolean;
   mode: Mode;
+  /** Parcours guidé : partie affichée de l'étape (0 contexte, 1 méditation, 2 citations). */
+  section: Section;
 }
 
 type Ecouteur = (etat: EtatApp, avant: EtatApp) => void;

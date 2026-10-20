@@ -25,4 +25,5 @@ npm run build    # site statique dans dist/
 - Côtes, lacs, fleuves : [Natural Earth](https://www.naturalearthdata.com/) (domaine public).
 - Relief : tuiles Terrarium de Mapzen, hébergées par AWS Open Data (SRTM, NASA, et autres sources libres).
 - Coordonnées des lieux : sources citées dans le champ `source` de chaque entrée.
+- Citations : Louis Segond 1910 (domaine public), dépôt [BibleCorps/FRA-B-LSG1910-PD-UBS](https://github.com/BibleCorps/FRA-B-LSG1910-PD-UBS), extraites par `npm run citations`.
 - Frontières antiques : tracé approximatif fait à la main, en cours de relecture.
