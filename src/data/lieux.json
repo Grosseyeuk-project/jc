@@ -1,0 +1,93 @@
+[
+  {
+    "id": "bethleem",
+    "nom": "Bethléem",
+    "type": "point",
+    "coord": [31.7043, 35.2076],
+    "certitude": "probable",
+    "site": "Basilique de la Nativité",
+    "alternatives": [],
+    "source": "Wikipédia (Church of the Nativity) : 31°42′15.5″N 35°12′27.3″E ; concordant avec GoHistoric"
+  },
+  {
+    "id": "jourdain-bapteme",
+    "nom": "Le Jourdain, lieu du baptême",
+    "type": "point",
+    "coord": [31.8371, 35.5461],
+    "certitude": "debattu",
+    "site": "Qasr al-Yahud (rive ouest du Jourdain, près de Jéricho)",
+    "alternatives": ["Al-Maghtas / Béthanie au-delà du Jourdain (rive est, Jordanie)"],
+    "source": "Vici.org : 31.837128, 35.546124 ; concordant avec Sygic (31°50′13.5″N 35°32′47.4″E)"
+  },
+  {
+    "id": "cana",
+    "nom": "Cana",
+    "type": "point",
+    "coord": [32.7466, 35.3424],
+    "certitude": "debattu",
+    "site": "Kafr Kanna (site traditionnel, église des Noces)",
+    "alternatives": ["Khirbet Qana, au nord de la plaine de Beit Netofa"],
+    "source": "NGA GeoNames (Kafr Kanna) : 32.7466, 35.342419"
+  },
+  {
+    "id": "collines-lac",
+    "nom": "Colline des Béatitudes",
+    "type": "zone",
+    "coord": [32.8809, 35.5558],
+    "rayon_km": 2,
+    "certitude": "debattu",
+    "site": "Église des Béatitudes, au-dessus de Tabgha",
+    "alternatives": ["Lc 6:17 parle d'un « lieu plat » : aucun site précis"],
+    "source": "Wikipédia (Church of the Beatitudes) : 32.880858, 35.555792"
+  },
+  {
+    "id": "mont-transfiguration",
+    "nom": "Mont Thabor",
+    "type": "point",
+    "coord": [32.6862, 35.3929],
+    "certitude": "debattu",
+    "site": "Mont Thabor (site traditionnel, basilique de la Transfiguration)",
+    "alternatives": ["Mont Hermon, proche de Césarée de Philippe"],
+    "source": "Wikipédia (Church of the Transfiguration) : 32°41′10″N 35°23′34″E ; concordant avec latitude.to"
+  },
+  {
+    "id": "bethanie",
+    "nom": "Béthanie",
+    "type": "point",
+    "coord": [31.7700, 35.2644],
+    "certitude": "probable",
+    "site": "Al-Eizariya, tombeau de Lazare",
+    "alternatives": [],
+    "source": "Wikipédia (Bethany) : 31°46′12″N 35°15′52″E ; concordant avec Sygic (tombeau de Lazare)"
+  },
+  {
+    "id": "mont-oliviers",
+    "nom": "Mont des Oliviers",
+    "type": "point",
+    "coord": [31.7789, 35.2450],
+    "certitude": "certain",
+    "site": "Sommet, chapelle de l'Ascension",
+    "alternatives": [],
+    "source": "Wikipédia (Chapel of the Ascension) : 31°46′44″N 35°14′42″E ; concordant avec latitude.to"
+  },
+  {
+    "id": "golgotha",
+    "nom": "Golgotha",
+    "type": "point",
+    "coord": [31.7784, 35.2294],
+    "certitude": "probable",
+    "site": "Basilique du Saint-Sépulcre (chapelle du Calvaire)",
+    "alternatives": ["Calvaire de Gordon, près du jardin de la Tombe (XIXe siècle, peu suivi par les historiens)"],
+    "source": "tyt.lt (Church of the Holy Sepulchre) : 31.778362, 35.229442"
+  },
+  {
+    "id": "tombeau",
+    "nom": "Le tombeau",
+    "type": "point",
+    "coord": [31.7784, 35.2294],
+    "certitude": "probable",
+    "site": "Basilique du Saint-Sépulcre (édicule du tombeau)",
+    "alternatives": ["Jardin de la Tombe, au nord de la porte de Damas"],
+    "source": "Même basilique que le Golgotha : tyt.lt, 31.778362, 35.229442"
+  }
+]

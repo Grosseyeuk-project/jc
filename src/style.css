@@ -1,0 +1,312 @@
+:root {
+  --parchemin: #efe2c2;
+  --parchemin-clair: #f7eedb;
+  --encre: #3b2a1a;
+  --encre-douce: #6b5640;
+  --sepia: #8b5e3c;
+  --rouge: #8a2f1d;
+  --or: #b8892b;
+  --debattu: #a0522d;
+  --bord: #cdb98f;
+  --titre: 'Cormorant Garamond', Georgia, serif;
+  --texte: 'EB Garamond', Georgia, serif;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--parchemin);
+  color: var(--encre);
+  font-family: var(--texte);
+  font-size: 17px;
+}
+
+#app {
+  display: grid;
+  grid-template-columns: 1fr minmax(300px, 360px);
+  height: 100dvh;
+}
+
+#carte { position: relative; min-height: 0; }
+
+/* ---------- Panneau ---------- */
+
+#panneau {
+  overflow-y: auto;
+  background: var(--parchemin-clair);
+  border-left: 1px solid var(--bord);
+  box-shadow: inset 6px 0 12px -10px rgba(59, 42, 26, 0.5);
+  padding: 20px 22px 28px;
+}
+
+.entete h1 {
+  font-family: var(--titre);
+  font-weight: 600;
+  font-size: 1.75rem;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.annee-courante {
+  margin: 4px 0 0;
+  font-family: var(--titre);
+  font-style: italic;
+  font-size: 1.2rem;
+  color: var(--sepia);
+}
+
+.fiche {
+  margin: 18px 0;
+  padding: 14px 0;
+  border-top: 1px solid var(--bord);
+  border-bottom: 1px solid var(--bord);
+  animation: apparition 0.35s ease-out;
+}
+
+.fiche h2 {
+  font-family: var(--titre);
+  font-size: 1.55rem;
+  margin: 2px 0 4px;
+}
+
+.fiche p { margin: 6px 0; line-height: 1.4; }
+.fiche-ordre { font-size: 0.85rem; color: var(--encre-douce); text-transform: uppercase; letter-spacing: 0.08em; }
+.fiche-date { font-style: italic; }
+.fiche-refs { color: var(--sepia); font-size: 0.95rem; }
+.fiche-alt, .fiche-variante, .fiche-note { font-size: 0.95rem; color: var(--encre-douce); }
+.fiche-note { border-left: 2px solid var(--or); padding-left: 10px; }
+.invite { font-style: italic; color: var(--encre-douce); }
+
+.etiquette {
+  font-size: 0.75rem;
+  font-style: normal;
+  border: 1px solid var(--bord);
+  border-radius: 8px;
+  padding: 0 6px;
+  color: var(--encre-douce);
+}
+
+.certitude {
+  display: inline-block;
+  font-size: 0.8rem;
+  padding: 1px 8px;
+  border-radius: 10px;
+  border: 1px solid currentColor;
+}
+.certitude-certain { color: #4f6b3a; }
+.certitude-probable { color: var(--sepia); }
+.certitude-debattu { color: var(--debattu); border-style: dashed; }
+
+.jalons h2 {
+  font-family: var(--titre);
+  font-size: 1.2rem;
+  margin: 0 0 6px;
+}
+
+.jalons ol { list-style: none; margin: 0; padding: 0; }
+
+.jalons ol button {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  align-items: baseline;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.jalons ol button:hover { background: rgba(139, 94, 60, 0.1); }
+.jalons ol button.actif { background: rgba(138, 47, 29, 0.12); }
+.jalon-annee { flex: 0 0 76px; font-size: 0.85rem; color: var(--encre-douce); }
+.jalons ol button.actif .jalon-titre { color: var(--rouge); font-weight: 600; }
+
+.recentrer {
+  margin-top: 12px;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--sepia);
+  background: none;
+  border: 1px solid var(--bord);
+  border-radius: 16px;
+  padding: 4px 14px;
+  cursor: pointer;
+}
+.recentrer:hover { background: rgba(139, 94, 60, 0.1); }
+
+button:focus-visible { outline: 2px solid var(--rouge); outline-offset: 2px; }
+
+/* ---------- Carte : étiquettes ---------- */
+
+.etiquette-region {
+  font-family: var(--titre);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgba(107, 70, 40, 0.7);
+  text-shadow: 0 0 3px var(--parchemin);
+  pointer-events: auto;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.ville {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.ville-point {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--encre);
+}
+.ville.gauche { flex-direction: row-reverse; }
+.ville-nom {
+  font-family: var(--texte);
+  font-size: 14px;
+  color: var(--encre);
+  text-shadow: 0 0 2px var(--parchemin), 0 0 4px var(--parchemin);
+}
+.ville.rang-1 .ville-nom { font-size: 16px; font-weight: 600; }
+.ville.rang-1 .ville-point { width: 8px; height: 8px; }
+
+/* Densité des étiquettes selon le zoom (data-zoom posé par la carte). */
+#carte[data-zoom='6'] .ville.rang-2,
+#carte[data-zoom='6'] .ville.rang-3,
+#carte[data-zoom='7'] .ville.rang-3,
+#carte[data-zoom='8'] .ville.rang-3 { display: none; }
+#carte[data-zoom='11'] .etiquette-region,
+#carte[data-zoom='12'] .etiquette-region,
+#carte[data-zoom='13'] .etiquette-region,
+#carte[data-zoom='14'] .etiquette-region,
+#carte[data-zoom='15'] .etiquette-region { display: none; }
+
+/* ---------- Carte : marqueurs des lieux ---------- */
+
+.marqueur {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  transition: opacity 0.4s;
+}
+.marqueur-disque {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: var(--rouge);
+  border: 2px solid var(--parchemin-clair);
+  box-shadow: 0 1px 3px rgba(59, 42, 26, 0.6);
+  transition: transform 0.25s;
+}
+.marqueur.certitude-debattu .marqueur-disque {
+  background: var(--parchemin-clair);
+  border: 2px dashed var(--rouge);
+}
+.marqueur:hover .marqueur-disque { transform: scale(1.2); }
+.marqueur.actif .marqueur-disque {
+  transform: scale(1.3);
+  animation: pulsation 1.8s ease-out infinite;
+}
+.marqueur.a-venir { opacity: 0.45; }
+
+.pastille-debattu {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--debattu);
+  color: #fff;
+  font: 600 11px/15px var(--texte);
+  text-align: center;
+}
+
+.marqueur-nom {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  font-family: var(--titre);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--rouge);
+  white-space: nowrap;
+  text-shadow: 0 0 2px var(--parchemin), 0 0 4px var(--parchemin), 0 0 6px var(--parchemin);
+  pointer-events: none;
+}
+/* Autour de Jérusalem, les lieux se chevauchent en vue large : noms masqués sauf l'actif. */
+#carte[data-zoom='6'] .marqueur:not(.actif) .marqueur-nom,
+#carte[data-zoom='7'] .marqueur:not(.actif) .marqueur-nom,
+#carte[data-zoom='8'] .marqueur:not(.actif) .marqueur-nom { display: none; }
+
+@keyframes pulsation {
+  0% { box-shadow: 0 0 0 0 rgba(138, 47, 29, 0.55); }
+  100% { box-shadow: 0 0 0 14px rgba(138, 47, 29, 0); }
+}
+@keyframes apparition {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marqueur.actif .marqueur-disque, .fiche { animation: none; }
+}
+
+/* ---------- Popup (plusieurs jalons au même lieu) ---------- */
+
+.popup-lieu .maplibregl-popup-content {
+  background: var(--parchemin-clair);
+  border: 1px solid var(--bord);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: var(--texte);
+}
+.popup-lieu .maplibregl-popup-tip { border-top-color: var(--parchemin-clair); border-bottom-color: var(--parchemin-clair); }
+.choix-titre { font-family: var(--titre); font-weight: 600; font-size: 1.05rem; margin-bottom: 4px; }
+.choix-etape {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 4px 2px;
+  cursor: pointer;
+  color: var(--encre);
+}
+.choix-etape:hover { color: var(--rouge); }
+.choix-ordre { color: var(--encre-douce); min-width: 1.5em; }
+
+.maplibregl-ctrl-attrib { font-family: var(--texte); background: rgba(247, 238, 219, 0.85) !important; }
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 760px) {
+  #app { grid-template-columns: 1fr; grid-template-rows: 58dvh 1fr; }
+  #panneau { border-left: 0; border-top: 1px solid var(--bord); padding: 14px 16px 24px; }
+  .entete h1 { font-size: 1.4rem; }
+}
+
+/* En zoom rapproché sur Jérusalem, les lieux de la Passion remplacent l'étiquette de la ville. */
+#carte[data-zoom='11'] .ville[data-ville='jerusalem'],
+#carte[data-zoom='12'] .ville[data-ville='jerusalem'],
+#carte[data-zoom='13'] .ville[data-ville='jerusalem'],
+#carte[data-zoom='14'] .ville[data-ville='jerusalem'],
+#carte[data-zoom='15'] .ville[data-ville='jerusalem'] { display: none; }
