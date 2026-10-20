@@ -837,3 +837,30 @@ table.selon tr.muet td { color: var(--bord); }
   #horloge { animation: none; }
   .horloge-aiguille { transition: none; }
 }
+
+/* ---------- Lisibilité : regroupement des lieux proches ---------- */
+
+.marqueur.regroupe { display: none; }
+.ville.masquee { visibility: hidden; }
+.marqueur-compte:empty { display: none; }
+.marqueur-compte {
+  position: absolute;
+  right: -10px;
+  bottom: -4px;
+  min-width: 17px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: var(--encre);
+  color: var(--parchemin-clair);
+  font: 600 10px/15px var(--texte);
+  text-align: center;
+  pointer-events: none;
+}
+.marqueur.groupe .marqueur-disque { box-shadow: 0 0 0 3px rgba(247, 238, 219, 0.9), 0 1px 4px rgba(59, 42, 26, 0.6); }
+
+/* Les « ? » n'apparaissent qu'en zoom rapproché, ou sur le lieu actif (l'anneau en pointillés suffit de loin). */
+#carte[data-zoom='5'] .marqueur:not(.actif) .pastille-debattu,
+#carte[data-zoom='6'] .marqueur:not(.actif) .pastille-debattu,
+#carte[data-zoom='7'] .marqueur:not(.actif) .pastille-debattu,
+#carte[data-zoom='8'] .marqueur:not(.actif) .pastille-debattu { display: none; }

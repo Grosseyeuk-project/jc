@@ -65,7 +65,16 @@ export function traceAu(u: number): { parcouru: GeoJSON.FeatureCollection; tete:
     tete = partiel[partiel.length - 1];
     features.push({ type: 'Feature', properties: { phase: SEGMENTS[i].phase }, geometry: { type: 'LineString', coordinates: partiel } });
   }
-  return { parcouru: { type: 'FeatureCollection', features }, tete };
+  return { parcouru: { type: 'FeatureCollection', features: vieillir(features) }, tete };
+}
+
+/**
+ * Âge de chaque segment (0 = le plus récent) : les plus anciens s'estompent
+ * sur la carte, et le dernier (`courant`) est animé.
+ */
+function vieillir(features: GeoJSON.Feature[]): GeoJSON.Feature[] {
+  const n = features.length;
+  return features.map((f, k) => ({ ...f, properties: { ...f.properties, age: n - 1 - k, courant: k === n - 1 } }));
 }
 
 /** Le voyage complet, en filigrane. */
@@ -97,7 +106,12 @@ export function traceSelon(indices: number[], u: number): { parcouru: GeoJSON.Fe
   return {
     parcouru: {
       type: 'FeatureCollection',
-      features: atteints.map((s) => ({ type: 'Feature', properties: { phase: s.phase }, geometry: { type: 'LineString', coordinates: s.points } })),
+      // En comparaison, tout le récit compte autant : pas d'estompage ni d'animation.
+      features: atteints.map((s) => ({
+        type: 'Feature',
+        properties: { phase: s.phase, age: 0, courant: false },
+        geometry: { type: 'LineString', coordinates: s.points },
+      })),
     },
     tete: derniere === undefined ? null : lngLat(etapes[derniere].lieu),
   };

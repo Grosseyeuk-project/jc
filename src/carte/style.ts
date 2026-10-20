@@ -72,7 +72,7 @@ export function creerStyle(base: string): StyleSpecification {
         source: 'frontieres',
         paint: {
           'fill-color': ['match', ['get', 'id'], ...Object.entries(TEINTES).flat(), '#bbb'] as never,
-          'fill-opacity': ['interpolate', ['linear'], ['zoom'], 6, 0.28, 11, 0.1],
+          'fill-opacity': ['interpolate', ['linear'], ['zoom'], 6, 0.17, 11, 0.06],
         },
       },
       {

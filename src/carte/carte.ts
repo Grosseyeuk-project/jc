@@ -51,6 +51,45 @@ function element(tag: string, classe: string, texte?: string): HTMLElement {
 
 const couleurParPhase = ['match', ['get', 'phase'], ...Object.entries(COULEURS_PHASES).flat(), '#8b5e3c'] as never;
 
+/** Chevron « > » dessiné sur un canevas, pour les flèches de direction (icône SDF, teintable). */
+function fleche(): ImageData {
+  const t = 32;
+  const c = document.createElement('canvas');
+  c.width = c.height = t;
+  const g = c.getContext('2d')!;
+  g.strokeStyle = '#000';
+  g.lineWidth = 5;
+  g.lineCap = 'round';
+  g.lineJoin = 'round';
+  g.beginPath();
+  g.moveTo(11, 8);
+  g.lineTo(21, 16);
+  g.lineTo(11, 24);
+  g.stroke();
+  return g.getImageData(0, 0, t, t);
+}
+
+/**
+ * Pointillés qui avancent : MapLibre n'a pas de décalage de tirets, on fait donc
+ * défiler une suite de motifs (technique de l'exemple « ant path » de MapLibre).
+ */
+const MARCHE: number[][] = [
+  [0, 4, 3],
+  [0.5, 4, 2.5],
+  [1, 4, 2],
+  [1.5, 4, 1.5],
+  [2, 4, 1],
+  [2.5, 4, 0.5],
+  [3, 4, 0],
+  [0, 0.5, 3, 3.5],
+  [0, 1, 3, 3],
+  [0, 1.5, 3, 2.5],
+  [0, 2, 3, 2],
+  [0, 2.5, 3, 1.5],
+  [0, 3, 3, 1],
+  [0, 3.5, 3, 0.5],
+];
+
 export function creerCarte(conteneur: HTMLElement, store: Store, actions: Actions) {
   const carte = new maplibregl.Map({
     container: conteneur,
@@ -90,11 +129,13 @@ export function creerCarte(conteneur: HTMLElement, store: Store, actions: Action
 
   // Villes repères, sauf celles qui sont aussi des lieux d'étapes (leur marqueur porte le nom).
   const villeParId = new Map(villes.map((v) => [v.id, v]));
+  const etiquettesVilles: { el: HTMLElement; coord: [number, number] }[] = [];
   for (const v of villes) {
     if (lieuParId.has(v.id)) continue;
     const gauche = v.etiquette === 'gauche';
     const el = element('div', `ville rang-${v.rang}${gauche ? ' gauche' : ''}`);
     el.dataset.ville = v.id;
+    etiquettesVilles.push({ el, coord: versLngLat(v.coord) });
     el.append(element('span', 'ville-point'), element('span', 'ville-nom', v.nom));
     new maplibregl.Marker({ element: el, anchor: gauche ? 'right' : 'left', offset: [gauche ? 4 : -4, 0] })
       .setLngLat(versLngLat(v.coord))
@@ -119,6 +160,20 @@ export function creerCarte(conteneur: HTMLElement, store: Store, actions: Action
     (carte.getSource('trace-complete') as GeoJSONSource).setData(
       mode === 'comparer' ? traceSelon(indicesSelon(evangile), U_MAX).parcouru : TRACE_COMPLETE,
     );
+  };
+
+  let pasMarche = -1;
+  const animerMarche = () => {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const pas = (t: number) => {
+      const k = Math.floor(t / 70) % MARCHE.length;
+      if (k !== pasMarche && carte.getLayer('trace-marche')) {
+        carte.setPaintProperty('trace-marche', 'line-dasharray', MARCHE[k]);
+        pasMarche = k;
+      }
+      requestAnimationFrame(pas);
+    };
+    requestAnimationFrame(pas);
   };
 
   carte.on('load', () => {
@@ -180,20 +235,61 @@ export function creerCarte(conteneur: HTMLElement, store: Store, actions: Action
     });
 
     carte.addSource('trace', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    // Les segments anciens s'estompent : le regard suit les derniers pas.
+    const opaciteParAge = ['interpolate', ['linear'], ['get', 'age'], 0, 1, 4, 0.8, 12, 0.55] as never;
     carte.addLayer({
       id: 'trace-halo',
       type: 'line',
       source: 'trace',
       layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: { 'line-color': '#f7eedb', 'line-width': ['interpolate', ['linear'], ['zoom'], 6, 4, 12, 7], 'line-opacity': 0.8 },
+      paint: {
+        'line-color': '#f7eedb',
+        'line-width': ['interpolate', ['linear'], ['zoom'], 6, 3, 12, 6],
+        'line-opacity': ['interpolate', ['linear'], ['get', 'age'], 0, 0.85, 6, 0.45] as never,
+      },
     });
     carte.addLayer({
       id: 'trace',
       type: 'line',
       source: 'trace',
       layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: { 'line-color': couleurParPhase, 'line-width': ['interpolate', ['linear'], ['zoom'], 6, 2, 12, 4] },
+      paint: {
+        'line-color': couleurParPhase,
+        'line-width': ['interpolate', ['linear'], ['zoom'], 6, 1.7, 12, 3.2],
+        'line-opacity': opaciteParAge,
+      },
     });
+    // Dernier segment : des pointillés couleur parchemin défilent dessus, comme une marche.
+    carte.addLayer({
+      id: 'trace-marche',
+      type: 'line',
+      source: 'trace',
+      filter: ['==', ['get', 'courant'], true],
+      layout: { 'line-cap': 'butt', 'line-join': 'round' },
+      paint: {
+        'line-color': '#f7eedb',
+        'line-width': ['interpolate', ['linear'], ['zoom'], 6, 1.4, 12, 3],
+        'line-dasharray': MARCHE[0],
+      },
+    });
+    // Flèches de direction le long du tracé (icône dessinée sur un canevas, teintée par phase).
+    carte.addImage('fleche', fleche(), { sdf: true });
+    carte.addLayer({
+      id: 'trace-fleches',
+      type: 'symbol',
+      source: 'trace',
+      layout: {
+        'symbol-placement': 'line',
+        'symbol-spacing': ['interpolate', ['linear'], ['zoom'], 6, 70, 12, 120] as never,
+        'icon-image': 'fleche',
+        'icon-size': ['interpolate', ['linear'], ['zoom'], 6, 0.45, 12, 0.7] as never,
+        'icon-rotation-alignment': 'map',
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
+      },
+      paint: { 'icon-color': couleurParPhase, 'icon-opacity': opaciteParAge },
+    });
+    animerMarche();
     carte.addSource('tete', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
     carte.addLayer({
       id: 'tete',
@@ -213,7 +309,17 @@ export function creerCarte(conteneur: HTMLElement, store: Store, actions: Action
     groupes.set(cle, [...(groupes.get(cle) ?? []), lieu]);
   }
 
-  const marqueurs: { el: HTMLElement; lieux: Set<string>; premiere: number; indices: number[] }[] = [];
+  type Marqueur = {
+    el: HTMLElement;
+    lieux: Set<string>;
+    premiere: number;
+    indices: number[];
+    coord: [number, number];
+    priorite: number;
+  };
+  const marqueurs: Marqueur[] = [];
+  /** Pour chaque marqueur « tête de groupe », les lieux qu'il représente à ce zoom. */
+  const groupesAffiches = new Map<HTMLElement, Marqueur[]>();
   const popup = new maplibregl.Popup({ closeButton: false, offset: 14, className: 'popup-lieu', maxWidth: '280px' });
   for (const groupe of groupes.values()) {
     const ids = new Set(groupe.map((l) => l.id));
@@ -233,9 +339,17 @@ export function creerCarte(conteneur: HTMLElement, store: Store, actions: Action
       pastille.title = LIBELLE_CERTITUDE.debattu;
       bouton.append(pastille);
     }
-    bouton.append(element('span', 'marqueur-nom', nom));
+    bouton.append(element('span', 'marqueur-nom', nom), element('span', 'marqueur-compte'));
     bouton.addEventListener('click', (ev) => {
       ev.stopPropagation();
+      // Groupe de lieux proches : on zoome pour les séparer.
+      const membres = groupesAffiches.get(bouton);
+      if (membres && membres.length > 1) {
+        const b = new maplibregl.LngLatBounds();
+        for (const m of membres) b.extend(m.coord);
+        carte.fitBounds(b, { padding: 110, maxZoom: 14.5, duration: 900 });
+        return;
+      }
       if (etapesIci.length === 1) {
         actions.allerA(etapesIci[0].id);
         return;
@@ -257,8 +371,47 @@ export function creerCarte(conteneur: HTMLElement, store: Store, actions: Action
     });
     new maplibregl.Marker({ element: bouton, anchor: 'center' }).setLngLat(versLngLat(groupe[0].coord)).addTo(carte);
     const indices = etapesIci.map((e) => indexDeEtape(e.id));
-    marqueurs.push({ el: bouton, lieux: ids, premiere: Math.min(...indices), indices });
+    // Priorité pour représenter un groupe : jalons, puis grandes villes, puis le reste.
+    const priorite = (jalon ? 0 : 2) + (ville?.rang === 1 ? 0 : 1);
+    marqueurs.push({ el: bouton, lieux: ids, premiere: Math.min(...indices), indices, coord: versLngLat(groupe[0].coord), priorite });
   }
+
+  // Regroupement : à petit zoom, les lieux à moins de RAYON pixels les uns des autres
+  // n'en forment qu'un, avec un compteur. Le lieu actif est toujours visible.
+  const RAYON = 26;
+  const regrouper = () => {
+    const actif = store.get().etapeActive ? etapeParId.get(store.get().etapeActive!)?.lieu : undefined;
+    const pos = new Map(marqueurs.map((m) => [m, carte.project(m.coord)]));
+    const ordre = [...marqueurs].sort(
+      (a, b) =>
+        Number(!(actif && b.lieux.has(actif))) - Number(!(actif && a.lieux.has(actif))) ||
+        a.priorite - b.priorite ||
+        a.premiere - b.premiere,
+    );
+    const pris = new Set<Marqueur>();
+    groupesAffiches.clear();
+    for (const tete of ordre) {
+      if (pris.has(tete)) continue;
+      const p = pos.get(tete)!;
+      const membres = ordre.filter((m) => !pris.has(m) && pos.get(m)!.dist(p) < RAYON);
+      for (const m of membres) pris.add(m);
+      groupesAffiches.set(tete.el, membres);
+      for (const m of membres) m.el.classList.toggle('regroupe', m !== tete);
+      tete.el.classList.toggle('groupe', membres.length > 1);
+      const compte = tete.el.querySelector<HTMLElement>('.marqueur-compte')!;
+      compte.textContent = membres.length > 1 ? `+${membres.length - 1}` : '';
+      tete.el.title = membres.length > 1 ? `${membres.length} lieux : cliquer pour zoomer` : tete.el.title;
+    }
+    // Les noms de villes trop proches d'un marqueur visible s'effacent.
+    const tetes = [...groupesAffiches.keys()].map((el) => pos.get(marqueurs.find((m) => m.el === el)!)!);
+    for (const v of etiquettesVilles) {
+      const p = carte.project(v.coord);
+      v.el.classList.toggle('masquee', tetes.some((t) => t.dist(p) < 22));
+    }
+  };
+  carte.on('zoomend', regrouper);
+  carte.on('resize', regrouper);
+  carte.once('load', regrouper);
 
   // Résurrection : apparitions numérotées en doré. Le tombeau vide et l'Ascension
   // ne sont pas des apparitions ; leurs lieux passent simplement au doré.
@@ -359,6 +512,7 @@ export function creerCarte(conteneur: HTMLElement, store: Store, actions: Action
 
   store.on('curseur', majCurseur);
   store.on('etapeActive', majEtape);
+  store.on('etapeActive', regrouper);
   store.subscribe((etat, avant) => {
     if (etat.etapeActive !== avant.etapeActive || etat.mode !== avant.mode) majAnnotation(etat);
     if (etat.mode !== avant.mode || etat.evangile !== avant.evangile) majComparer(etat);

@@ -60,6 +60,11 @@ Commandes : `npm run dev`, `npm test`, `npm run build`, `npm run geo` (re-télé
 - Résurrection : lieux dorés une fois atteints, apparitions numérotées de 1 à 5 (pastilles dorées cliquables).
 - Les marqueurs MapLibre portent une `opacity` en ligne : pour estomper, utiliser `filter: opacity()`.
 
+## Améliorations visuelles
+
+- Lisibilité : à petit zoom, les lieux à moins de 26 px se regroupent en un marqueur avec compteur (clic = zoom sur le groupe) ; le lieu actif reste toujours visible ; les noms de villes qui gênent un marqueur s'effacent ; les « ? » n'apparaissent qu'à partir du zoom 9 ou sur le lieu actif ; aplats des régions allégés.
+- Tracé : plus fin, segments anciens estompés (propriété `age`), flèches de direction (icône SDF dessinée sur canevas), dernier segment animé en pointillés qui avancent (`courant`). Pas d'animation si l'utilisateur a demandé moins de mouvement.
+
 Suite : on continue d'améliorer la version actuelle avant d'ouvrir la phase 2.
 
 ## Phase 2 (reportée)
