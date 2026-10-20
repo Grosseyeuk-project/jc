@@ -18,11 +18,27 @@ const NOMS_PHASES: Record<Phase, string> = {
 
 const pct = (u: number) => `${((u / U_MAX) * 100).toFixed(3)}%`;
 
+/** Noms courts des jalons, affichés au-dessus de la frise. */
+const NOMS_COURTS: Record<string, string> = {
+  nativite: 'Nativité',
+  bapteme: 'Baptême',
+  cana: 'Cana',
+  'sermon-montagne': 'Sermon',
+  transfiguration: 'Transfiguration',
+  lazare: 'Lazare',
+  rameaux: 'Rameaux',
+  crucifixion: 'Croix',
+  'tombeau-vide': 'Tombeau vide',
+  ascension: 'Ascension',
+};
+
 export function creerFrise(racine: HTMLElement, store: Store, actions: Actions) {
   racine.innerHTML = `
     <button type="button" class="frise-lecture" aria-label="Lancer la lecture"></button>
     <div class="frise-piste">
       <div class="frise-phases"></div>
+      <div class="frise-noms"></div>
+      <div class="frise-bulle" aria-hidden="true"><strong></strong><span></span></div>
       <div class="frise-rail"><div class="frise-parcouru"></div></div>
       <div class="frise-etapes"></div>
       <input type="range" class="frise-curseur" id="frise-curseur" min="0" max="${U_MAX}" step="0.01" aria-label="Avancer dans le temps" />
@@ -48,6 +64,8 @@ export function creerFrise(racine: HTMLElement, store: Store, actions: Actions) 
 
   // Une graduation par étape ; les jalons sont des boutons au-dessus du curseur.
   const graduations = racine.querySelector('.frise-etapes')!;
+  const noms = racine.querySelector<HTMLElement>('.frise-noms')!;
+  const bulle = racine.querySelector<HTMLElement>('.frise-bulle')!;
   const jalons = racine.querySelector('.frise-jalons')!;
   const marques: HTMLElement[] = [];
   etapes.forEach((e, i) => {
@@ -69,8 +87,40 @@ export function creerFrise(racine: HTMLElement, store: Store, actions: Actions) 
       b.setAttribute('aria-label', `${e.titre}, ${e.date}`);
       b.addEventListener('click', () => actions.allerA(e.id));
       jalons.append(b);
+
+      const n = document.createElement('button');
+      n.type = 'button';
+      n.className = 'frise-nom';
+      n.dataset.etape = e.id;
+      n.dataset.u = String(POSITIONS[i]);
+      n.style.setProperty('--couleur', COULEURS_PHASES[e.phase]);
+      n.textContent = NOMS_COURTS[e.id] ?? e.titre;
+      n.tabIndex = -1; // le bouton rond du jalon suffit au clavier
+      n.addEventListener('click', () => actions.allerA(e.id));
+      noms.append(n);
     }
   });
+
+  // Noms des jalons : sur une rangée tant qu'ils ne se gênent pas, sinon sur une
+  // seconde rangée reliée au jalon par un trait. Recalculé quand la frise change de taille.
+  function placerNoms() {
+    const largeur = noms.clientWidth;
+    if (!largeur) return;
+    const fins = [-Infinity, -Infinity];
+    for (const n of noms.querySelectorAll<HTMLElement>('.frise-nom')) {
+      n.hidden = false;
+      const w = n.offsetWidth;
+      const centre = (Number(n.dataset.u) / U_MAX) * largeur;
+      const gauche = Math.min(Math.max(centre - w / 2, 0), largeur - w);
+      const rang = gauche >= fins[0] + 8 ? 0 : gauche >= fins[1] + 8 ? 1 : -1;
+      n.hidden = rang < 0;
+      if (rang < 0) continue;
+      fins[rang] = gauche + w;
+      n.style.left = `${gauche}px`;
+      n.style.setProperty('--trait', `${centre - gauche}px`);
+      n.classList.toggle('haut', rang === 1);
+    }
+  }
 
   // Repères d'années. Les plus serrés sont masqués sur petit écran.
   const annees = racine.querySelector('.frise-annees')!;
@@ -85,8 +135,17 @@ export function creerFrise(racine: HTMLElement, store: Store, actions: Actions) 
   });
 
   // Gestes.
-  curseur.addEventListener('input', () => actions.glisser(Number(curseur.value)));
-  curseur.addEventListener('change', () => actions.relacher());
+  curseur.addEventListener('input', () => {
+    racine.classList.add('glisse');
+    actions.glisser(Number(curseur.value));
+  });
+  curseur.addEventListener('change', () => {
+    racine.classList.remove('glisse');
+    actions.relacher();
+  });
+  curseur.addEventListener('pointerup', () => racine.classList.remove('glisse'));
+  new ResizeObserver(placerNoms).observe(noms);
+  document.fonts?.ready.then(placerNoms);
   curseur.addEventListener('keydown', (ev) => {
     const touches: Record<string, () => void> = {
       ArrowLeft: () => actions.decaler(-1),
@@ -111,15 +170,26 @@ export function creerFrise(racine: HTMLElement, store: Store, actions: Actions) 
     const i = indexPlusProche(u);
     const e = etapes[i];
     curseur.setAttribute('aria-valuetext', `Étape ${e.ordre} sur ${etapes.length} : ${e.titre}, ${formatAnnee(e.annee)}`);
+    // Bulle au-dessus de la poignée : étape la plus proche, et l'année qui défile.
+    bulle.querySelector('strong')!.textContent = `${e.ordre}. ${e.titre}`;
+    bulle.querySelector('span')!.textContent = formatAnnee(store.get().annee);
+    // Centrée sur la poignée, sans déborder des bords de la frise.
+    const largeur = noms.parentElement!.clientWidth;
+    const x = (u / U_MAX) * (largeur - 14) + 7;
+    const demi = bulle.offsetWidth / 2;
+    bulle.style.left = `${Math.min(Math.max(x, demi), largeur - demi)}px`;
+    bulle.style.setProperty('--couleur', COULEURS_PHASES[e.phase]);
     marques.forEach((m, k) => m.classList.toggle('atteinte', POSITIONS[k] <= u + 1e-6));
   };
   const majLecture = (lecture: boolean) => {
     bouton.classList.toggle('en-lecture', lecture);
+    racine.classList.toggle('en-lecture', lecture);
     bouton.setAttribute('aria-label', lecture ? 'Mettre en pause' : 'Lancer la lecture');
     bouton.title = lecture ? 'Pause' : 'Lecture du voyage';
   };
   const majEtape = (id: string | null) => {
-    for (const b of jalons.querySelectorAll<HTMLButtonElement>('button')) b.classList.toggle('actif', b.dataset.etape === id);
+    for (const b of racine.querySelectorAll<HTMLButtonElement>('.frise-jalon, .frise-nom')) b.classList.toggle('actif', b.dataset.etape === id);
+    racine.classList.toggle('a-etape', !!id);
   };
 
   // Mode comparer : étapes absentes de l'évangile estompées, variantes signalées.
@@ -130,7 +200,7 @@ export function creerFrise(racine: HTMLElement, store: Store, actions: Actions) 
       m.classList.toggle('absent', comparer && !raconte(etapes[k], etat.evangile));
       m.classList.toggle('variante', comparer && !!etapes[k].variante);
     });
-    for (const b of jalons.querySelectorAll<HTMLButtonElement>('button')) {
+    for (const b of racine.querySelectorAll<HTMLButtonElement>('.frise-jalon, .frise-nom')) {
       const e = etapes.find((x) => x.id === b.dataset.etape)!;
       b.classList.toggle('absent', comparer && !raconte(e, etat.evangile));
     }

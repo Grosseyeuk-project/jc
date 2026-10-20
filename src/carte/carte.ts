@@ -107,6 +107,8 @@ export function creerCarte(conteneur: HTMLElement, store: Store, actions: Action
   carte.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
   carte.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
   habillerCarte(carte, conteneur);
+  // La carte suit la taille de son cadre (panneau replié ou déplié sur téléphone, frise…).
+  new ResizeObserver(() => carte.resize()).observe(conteneur);
 
   // Le niveau de zoom pilote, en CSS, quelles étiquettes sont visibles.
   const majZoom = () => (conteneur.dataset.zoom = String(Math.floor(carte.getZoom())));

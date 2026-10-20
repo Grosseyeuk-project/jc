@@ -67,6 +67,8 @@ Commandes : `npm run dev`, `npm test`, `npm run build`, `npm run geo` (re-télé
 
 - Ambiance carte ancienne (`src/carte/ancienne.ts`) : papier (grain, taches, bords brunis, double filet), mer et lacs hachurés, lignes d'eau le long des côtes, rose des vents, cartouche de titre (masqué quand l'horloge de la Passion est affichée), noms des eaux et des régions en IM Fell (polices @fontsource). Les rotations d'étiquettes HTML se font sur un élément intérieur : MapLibre réserve `transform` au marqueur.
 
+- Panneau et frise : noms courts des jalons au-dessus de la frise (deux rangées calculées selon la place), bulle qui suit la poignée pendant le glisser et la lecture ; panneau avec fiche en tableau (Date, Heure, Lieu, Site, Textes), titres en IM Fell, citations ornées, jalons en frise verticale aux couleurs des phases. Sur téléphone, panneau repliable par une poignée (replié au chargement) et bulle de l'étape choisie sur la frise.
+
 Suite : on continue d'améliorer la version actuelle avant d'ouvrir la phase 2.
 
 ## Phase 2 (reportée)

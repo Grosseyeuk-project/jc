@@ -1,6 +1,7 @@
 import type { Actions } from '../actions';
 import { citations, etapeParId, etapes, formatAnnee, jalons, LIBELLE_CERTITUDE, lieuParId, textes } from '../donnees';
 import { etapesAVariante, EVANGILES, indicesSelon, NOMS_EVANGILES, referencesSelon } from '../evangiles';
+import { COULEURS_PHASES } from '../carte/trace';
 import { formatHeure } from '../passion';
 import type { EtatApp, Mode, Section, Store } from '../state';
 import type { Etape } from '../types';
@@ -39,17 +40,33 @@ function blocCitations(e: Etape): string {
     .join('');
 }
 
+const NOMS_PHASES: Record<Etape['phase'], string> = {
+  enfance: 'Enfance',
+  ministere: 'Ministère',
+  'vers-jerusalem': 'Vers Jérusalem',
+  passion: 'Passion',
+  resurrection: 'Résurrection',
+};
+
 function enTete(e: Etape): string {
   const lieu = lieuParId.get(e.lieu);
   const certitude = e.certitude_lieu; // dépend de l'événement, pas seulement du lieu
   const heure = formatHeure(e);
   return `
-    <p class="fiche-ordre">Étape ${e.ordre} sur ${etapes.length}</p>
+    <p class="fiche-ordre" style="--couleur:${COULEURS_PHASES[e.phase]}">
+      <span>${NOMS_PHASES[e.phase]}</span> · étape ${e.ordre} sur ${etapes.length}
+    </p>
     <h2>${echapper(e.titre)}</h2>
-    <p class="fiche-date">${echapper(e.date)}${heure ? ` · ${echapper(heure)}` : ''}${e.precision === 'hypothese' ? ' <span class="etiquette">hypothèse</span>' : ''}</p>
-    ${lieu ? `<p class="fiche-lieu"><strong>${echapper(lieu.nom)}</strong> · ${echapper(lieu.site)}</p>` : ''}
-    <p class="fiche-meta"><span class="certitude certitude-${certitude}">${LIBELLE_CERTITUDE[certitude]}</span>
-      <span class="fiche-refs">${e.references.map(echapper).join(' · ')}</span></p>`;
+    <dl class="fiche-infos">
+      <dt>Date</dt>
+      <dd>${echapper(e.date)}${e.precision === 'hypothese' ? ' <span class="etiquette">hypothèse</span>' : ''}</dd>
+      ${heure ? `<dt>Heure</dt><dd>${echapper(heure)} <span class="etiquette">supposée</span></dd>` : ''}
+      ${lieu ? `<dt>Lieu</dt><dd><strong>${echapper(lieu.nom)}</strong><br><span class="fiche-site">${echapper(lieu.site)}</span></dd>` : ''}
+      <dt>Site</dt>
+      <dd><span class="certitude certitude-${certitude}">${LIBELLE_CERTITUDE[certitude]}</span></dd>
+      <dt>Textes</dt>
+      <dd class="fiche-refs">${e.references.map(echapper).join(' · ')}</dd>
+    </dl>`;
 }
 
 function annexes(e: Etape, avecVariante = true): string {
@@ -81,7 +98,12 @@ function selonLesEvangiles(e: Etape, choisi: string): string {
 }
 
 export function creerPanneau(racine: HTMLElement, store: Store, actions: Actions, carte: { recentrer: () => void }) {
+  racine.dataset.replie = String(matchMedia('(max-width: 760px)').matches);
   racine.innerHTML = `
+    <button type="button" class="poignee" aria-expanded="false" aria-controls="panneau">
+      <span class="poignee-barre" aria-hidden="true"></span>
+      <span class="poignee-texte"></span>
+    </button>
     <header class="entete">
       <h1>Sur les traces de Jésus</h1>
       <p class="annee-courante" aria-live="polite"></p>
@@ -116,6 +138,19 @@ export function creerPanneau(racine: HTMLElement, store: Store, actions: Actions
     </nav>`;
 
   const $ = <T extends HTMLElement>(sel: string) => racine.querySelector<T>(sel)!;
+
+  // Sur téléphone, le panneau se replie en bas de l'écran ; la poignée le déplie.
+  const poignee = $<HTMLButtonElement>('.poignee');
+  const majPoignee = () => {
+    const replie = racine.dataset.replie === 'true';
+    poignee.setAttribute('aria-expanded', String(!replie));
+    poignee.setAttribute('aria-label', replie ? 'Déplier le panneau' : 'Replier le panneau');
+  };
+  poignee.addEventListener('click', () => {
+    racine.dataset.replie = String(racine.dataset.replie !== 'true');
+    majPoignee();
+  });
+  majPoignee();
   const anneeEl = $('.annee-courante');
   const fiche = $('.fiche');
   const liste = $<HTMLOListElement>('.jalons ol');
@@ -151,7 +186,8 @@ export function creerPanneau(racine: HTMLElement, store: Store, actions: Actions
     const b = document.createElement('button');
     b.type = 'button';
     b.dataset.etape = e.id;
-    b.innerHTML = `<span class="jalon-annee">${echapper(gauche)}</span><span class="jalon-titre">${echapper(e.titre)}</span>`;
+    b.style.setProperty('--couleur', COULEURS_PHASES[e.phase]);
+    b.innerHTML = `<span class="jalon-annee">${echapper(gauche)}</span><span class="jalon-point" aria-hidden="true"></span><span class="jalon-titre">${echapper(e.titre)}</span>`;
     b.addEventListener('click', () => actions.allerA(e.id));
     li.append(b);
     return li;
@@ -174,6 +210,7 @@ export function creerPanneau(racine: HTMLElement, store: Store, actions: Actions
   const maj = (etat: EtatApp) => {
     const { etapeActive: id, mode, section, evangile } = etat;
     const e = id ? etapeParId.get(id) : undefined;
+    $('.poignee-texte').textContent = e ? `${e.ordre}. ${e.titre}` : 'Sur les traces de Jésus';
 
     for (const b of racine.querySelectorAll<HTMLButtonElement>('.modes button')) {
       const actif = b.dataset.mode === mode;
