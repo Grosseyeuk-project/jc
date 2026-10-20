@@ -60,7 +60,11 @@ Commandes : `npm run dev`, `npm test`, `npm run build`, `npm run geo` (re-télé
 - Résurrection : lieux dorés une fois atteints, apparitions numérotées de 1 à 5 (pastilles dorées cliquables).
 - Les marqueurs MapLibre portent une `opacity` en ligne : pour estomper, utiliser `filter: opacity()`.
 
-Jalons suivants : 5) phase 2 (les apôtres, sur le même moteur).
+Suite : on continue d'améliorer la version actuelle avant d'ouvrir la phase 2.
+
+## Phase 2 (reportée)
+
+Décision de Vincent, à appliquer le moment venu : Pierre et Paul d'après les Actes des Apôtres (Pierre : Pentecôte, Samarie, Joppé, Césarée ; Paul : conversion, trois voyages missionnaires, voyage vers Rome), citations Louis Segond. Dans la même page, avec un sélecteur de récit « Jésus / Les apôtres » ; la carte s'élargit à la Méditerranée orientale pour les apôtres.
 
 ## Points encore ouverts
 
