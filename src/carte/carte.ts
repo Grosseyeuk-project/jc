@@ -12,6 +12,7 @@ import frontieres from '../data/frontieres.json';
 import { etapeParId, etapes, formatAnnee, LIBELLE_CERTITUDE, lieuParId, lieux, villes } from '../donnees';
 import type { EtatApp, Store } from '../state';
 import type { Lieu } from '../types';
+import { habillerCarte } from './ancienne';
 import { creerStyle } from './style';
 import { COULEURS_PHASES, TRACE_COMPLETE, traceAu, traceSelon } from './trace';
 
@@ -104,7 +105,8 @@ export function creerCarte(conteneur: HTMLElement, store: Store, actions: Action
   });
   carte.touchZoomRotate.disableRotation();
   carte.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
-  carte.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'top-left');
+  carte.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+  habillerCarte(carte, conteneur);
 
   // Le niveau de zoom pilote, en CSS, quelles étiquettes sont visibles.
   const majZoom = () => (conteneur.dataset.zoom = String(Math.floor(carte.getZoom())));

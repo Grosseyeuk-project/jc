@@ -10,6 +10,8 @@
   --bord: #cdb98f;
   --titre: 'Cormorant Garamond', Georgia, serif;
   --texte: 'EB Garamond', Georgia, serif;
+  --ancienne: 'IM Fell English SC', 'Cormorant Garamond', Georgia, serif;
+  --ancienne-italique: 'IM Fell English', 'Cormorant Garamond', Georgia, serif;
   color-scheme: light;
 }
 
@@ -155,13 +157,10 @@ button:focus-visible { outline: 2px solid var(--rouge); outline-offset: 2px; }
 /* ---------- Carte : étiquettes ---------- */
 
 .etiquette-region {
-  font-family: var(--titre);
-  font-style: italic;
-  font-weight: 600;
-  font-size: 15px;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: rgba(107, 70, 40, 0.7);
+  font-family: var(--ancienne);
+  font-size: 17px;
+  letter-spacing: 0.3em;
+  color: rgba(96, 60, 32, 0.72);
   text-shadow: 0 0 3px var(--parchemin);
   pointer-events: auto;
   white-space: nowrap;
@@ -864,3 +863,114 @@ table.selon tr.muet td { color: var(--bord); }
 #carte[data-zoom='6'] .marqueur:not(.actif) .pastille-debattu,
 #carte[data-zoom='7'] .marqueur:not(.actif) .pastille-debattu,
 #carte[data-zoom='8'] .marqueur:not(.actif) .pastille-debattu { display: none; }
+
+/* ---------- Ambiance carte ancienne ---------- */
+
+/* Papier : grain fin, taches irrégulières, bords brunis et double filet d'encadrement. */
+.papier {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(120, 80, 38, 0.32) 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><filter id='t'><feTurbulence type='fractalNoise' baseFrequency='0.006' numOctaves='3' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.3 0 0 0 0 0.12 0 0 0 0.5 -0.12'/></filter><rect width='100%' height='100%' filter='url(%23t)'/></svg>"),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.2 0 0 0 0 0.1 0 0 0 0.35 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+  /* Les taches couvrent toute la carte sans se répéter (pas de raccord visible) ; seul le grain se répète. */
+  background-size: 100% 100%, cover, 240px 240px;
+  background-repeat: no-repeat, no-repeat, repeat;
+  mix-blend-mode: multiply;
+  box-shadow:
+    inset 0 0 0 7px rgba(247, 238, 219, 0.85),
+    inset 0 0 0 8px #7a5a3a,
+    inset 0 0 0 11px rgba(247, 238, 219, 0.85),
+    inset 0 0 0 12.5px #7a5a3a;
+}
+
+/* Rose des vents. */
+.rose-des-vents {
+  --rose-clair: #f7eedb;
+  --rose-nord: #8a2f1d;
+  position: absolute;
+  right: 22px;
+  bottom: 44px;
+  width: 104px;
+  height: 104px;
+  color: #6b4a2b;
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 1;
+}
+.rose-des-vents svg { width: 100%; height: 100%; overflow: visible; }
+.rose-lettre { font: 14px var(--ancienne); fill: #6b4a2b; stroke: none; }
+
+/* Cartouche de titre. */
+.cartouche-titre {
+  position: absolute;
+  top: 22px;
+  left: 22px;
+  display: grid;
+  justify-items: center;
+  padding: 10px 22px 11px;
+  background: rgba(247, 238, 219, 0.92);
+  border: 1px solid #7a5a3a;
+  outline: 1px solid #7a5a3a;
+  outline-offset: 3px;
+  box-shadow: 0 2px 10px rgba(59, 42, 26, 0.25);
+  color: var(--encre);
+  pointer-events: none;
+  z-index: 1;
+}
+.cartouche-titre::before,
+.cartouche-titre::after {
+  content: '❦';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
+  color: #8a6d47;
+}
+.cartouche-titre::before { left: 6px; transform: translateY(-50%) scaleX(-1); }
+.cartouche-titre::after { right: 6px; }
+.cartouche-latin { font: 12px var(--ancienne); letter-spacing: 0.35em; color: #8a6d47; }
+.cartouche-titre-principal { font: 19px/1.2 var(--ancienne); letter-spacing: 0.04em; }
+.cartouche-date { font: italic 13px var(--ancienne-italique); color: var(--encre-douce); }
+
+/* Noms des eaux. */
+.nom-eau { pointer-events: none; }
+/* La rotation va sur un élément intérieur : MapLibre réserve `transform` au positionnement du marqueur. */
+.nom-eau > div {
+  display: grid;
+  justify-items: center;
+  transform: rotate(var(--angle));
+  font-family: var(--ancienne-italique);
+  font-style: italic;
+  color: rgba(52, 82, 76, 0.85);
+  text-shadow: 0 0 3px rgba(185, 200, 189, 0.9);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.nom-eau.eau-mer span { font-size: 22px; letter-spacing: 0.3em; }
+.nom-eau small { font-size: 13px; letter-spacing: 0.2em; }
+.nom-eau.eau-lac span { font-size: 13px; letter-spacing: 0.15em; }
+.nom-eau.eau-fleuve span { font-size: 13px; letter-spacing: 0.25em; text-shadow: 0 0 3px var(--parchemin); }
+#carte[data-zoom='5'] .eau-lac, #carte[data-zoom='6'] .eau-lac,
+#carte[data-zoom='5'] .eau-fleuve, #carte[data-zoom='6'] .eau-fleuve, #carte[data-zoom='7'] .eau-fleuve,
+#carte[data-zoom='10'] .eau-mer, #carte[data-zoom='11'] .nom-eau, #carte[data-zoom='12'] .nom-eau,
+#carte[data-zoom='13'] .nom-eau, #carte[data-zoom='14'] .nom-eau, #carte[data-zoom='15'] .nom-eau { display: none; }
+
+/* Plan de Jérusalem en lettres anciennes. */
+.etiquette-plan { font-family: var(--ancienne-italique); }
+.etiquette-plan.plan-quartier { font-family: var(--ancienne); font-style: normal; }
+
+/* L'horloge de la Passion se place sous le cartouche quand les deux sont là. */
+#horloge { top: 12px; }
+.maplibregl-ctrl-scale { margin-bottom: 18px !important; margin-left: 20px !important; background: rgba(247, 238, 219, 0.8); border-color: #7a5a3a; color: #6b4a2b; font-family: var(--texte); }
+.maplibregl-ctrl-top-right { margin: 14px 14px 0 0; }
+
+@media (max-width: 760px) {
+  .rose-des-vents { width: 64px; height: 64px; right: 14px; bottom: 36px; }
+  .cartouche-titre { display: none; }
+  .nom-eau.eau-mer span { font-size: 16px; }
+}
+/* Le cartouche s'efface quand l'horloge de la Passion occupe le haut de la carte. */
+#scene:has(#horloge:not([hidden])) .cartouche-titre { display: none; }

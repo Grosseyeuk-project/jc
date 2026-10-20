@@ -65,6 +65,8 @@ Commandes : `npm run dev`, `npm test`, `npm run build`, `npm run geo` (re-télé
 - Lisibilité : à petit zoom, les lieux à moins de 26 px se regroupent en un marqueur avec compteur (clic = zoom sur le groupe) ; le lieu actif reste toujours visible ; les noms de villes qui gênent un marqueur s'effacent ; les « ? » n'apparaissent qu'à partir du zoom 9 ou sur le lieu actif ; aplats des régions allégés.
 - Tracé : plus fin, segments anciens estompés (propriété `age`), flèches de direction (icône SDF dessinée sur canevas), dernier segment animé en pointillés qui avancent (`courant`). Pas d'animation si l'utilisateur a demandé moins de mouvement.
 
+- Ambiance carte ancienne (`src/carte/ancienne.ts`) : papier (grain, taches, bords brunis, double filet), mer et lacs hachurés, lignes d'eau le long des côtes, rose des vents, cartouche de titre (masqué quand l'horloge de la Passion est affichée), noms des eaux et des régions en IM Fell (polices @fontsource). Les rotations d'étiquettes HTML se font sur un élément intérieur : MapLibre réserve `transform` au marqueur.
+
 Suite : on continue d'améliorer la version actuelle avant d'ouvrir la phase 2.
 
 ## Phase 2 (reportée)

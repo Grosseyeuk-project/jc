@@ -3,6 +3,8 @@ import '@fontsource/cormorant-garamond/latin-600-italic.css';
 import '@fontsource/eb-garamond/latin-400.css';
 import '@fontsource/eb-garamond/latin-400-italic.css';
 import '@fontsource/eb-garamond/latin-600.css';
+import '@fontsource/im-fell-english-sc/latin-400.css';
+import '@fontsource/im-fell-english/latin-400-italic.css';
 import './style.css';
 import { creerActions, store } from './actions';
 import { creerCarte } from './carte/carte';
