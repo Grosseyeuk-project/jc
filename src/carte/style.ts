@@ -25,7 +25,7 @@ const TEINTES: Record<string, string> = {
   phenicie: '#7fa3a1',
 };
 
-export const BBOX_RELIEF: [number, number, number, number] = [33.6, 29.4, 37.2, 34.2];
+export const BBOX_RELIEF: [number, number, number, number] = [30.8, 29.4, 37.2, 34.2];
 
 /** `base` : adresse absolue du site, terminée par « / ». */
 export function creerStyle(base: string): StyleSpecification {

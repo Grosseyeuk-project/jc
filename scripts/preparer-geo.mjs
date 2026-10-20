@@ -11,7 +11,7 @@ import bboxClip from '@turf/bbox-clip';
 // Emprise des données : du delta du Nil à Damas.
 const BBOX = [30.5, 28.5, 38.5, 35.5]; // [ouest, sud, est, nord]
 // Emprise du relief (plus serrée : la Palestine antique et ses abords).
-const BBOX_RELIEF = [33.6, 29.4, 37.2, 34.2];
+const BBOX_RELIEF = [30.8, 29.4, 37.2, 34.2]; // jusqu'au Vieux-Caire (fuite en Égypte)
 const ZOOM_RELIEF = [5, 9];
 
 const NE = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/';

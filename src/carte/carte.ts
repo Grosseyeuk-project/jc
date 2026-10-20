@@ -1,19 +1,30 @@
 import * as maplibregl from 'maplibre-gl';
-import type { LngLatLike } from 'maplibre-gl';
+import type { GeoJSONSource, LngLatLike } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 // MapLibre 6 charge son worker à part : Vite le construit et nous donne son adresse.
 import urlWorker from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
+import type { Actions } from '../actions';
+import { indexDeEtape, positionAu } from '../chronologie';
 import frontieres from '../data/frontieres.json';
-import { etapeParId, formatAnnee, jalons, jalonsDuLieu, LIBELLE_CERTITUDE, lieuParId, villes } from '../donnees';
-import type { Store } from '../state';
+import { etapeParId, etapes, formatAnnee, LIBELLE_CERTITUDE, lieuParId, lieux, villes } from '../donnees';
+import type { EtatApp, Store } from '../state';
 import type { Lieu } from '../types';
 import { creerStyle } from './style';
+import { COULEURS_PHASES, TRACE_COMPLETE, traceAu } from './trace';
+
+maplibregl.setWorkerUrl(urlWorker);
 
 const VUE_INITIALE = { center: [35.45, 32.15] as LngLatLike, zoom: 7.3 };
-const LIMITES: [[number, number], [number, number]] = [[33.0, 29.6], [37.8, 34.0]];
+// Jusqu'au Vieux-Caire à l'ouest, pour la fuite en Égypte.
+const LIMITES: [[number, number], [number, number]] = [[29.8, 28.8], [38.2, 34.4]];
+// Lieux à moins de 3 km du Temple : on zoome davantage pour les distinguer.
+const JERUSALEM: [number, number] = [31.7781, 35.2358];
 
 /** [lat, lon] (format des données) → [lon, lat] (format MapLibre). */
 const versLngLat = ([lat, lon]: [number, number]): [number, number] => [lon, lat];
+
+const distanceKm = ([a, b]: [number, number], [c, d]: [number, number]) =>
+  Math.hypot((a - c) * 110.6, (b - d) * 111.3 * Math.cos((a * Math.PI) / 180));
 
 function cercle(lieu: Lieu, pas = 48): GeoJSON.Feature {
   const [lat, lon] = lieu.coord;
@@ -35,14 +46,14 @@ function element(tag: string, classe: string, texte?: string): HTMLElement {
   return el;
 }
 
-maplibregl.setWorkerUrl(urlWorker);
+const couleurParPhase = ['match', ['get', 'phase'], ...Object.entries(COULEURS_PHASES).flat(), '#8b5e3c'] as never;
 
-export function creerCarte(conteneur: HTMLElement, store: Store) {
+export function creerCarte(conteneur: HTMLElement, store: Store, actions: Actions) {
   const carte = new maplibregl.Map({
     container: conteneur,
     style: creerStyle(new URL(import.meta.env.BASE_URL, location.href).href),
     ...VUE_INITIALE,
-    minZoom: 6,
+    minZoom: 5.5,
     maxZoom: 15,
     maxBounds: LIMITES,
     attributionControl: { compact: true },
@@ -51,7 +62,7 @@ export function creerCarte(conteneur: HTMLElement, store: Store) {
   });
   carte.touchZoomRotate.disableRotation();
   carte.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
-  carte.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+  carte.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'top-left');
 
   // Le niveau de zoom pilote, en CSS, quelles étiquettes sont visibles.
   const majZoom = () => (conteneur.dataset.zoom = String(Math.floor(carte.getZoom())));
@@ -66,45 +77,92 @@ export function creerCarte(conteneur: HTMLElement, store: Store) {
     new maplibregl.Marker({ element: el }).setLngLat(p.etiquette).addTo(carte);
   }
 
-  // Villes principales.
+  // Villes repères, sauf celles qui sont aussi des lieux d'étapes (leur marqueur porte le nom).
+  const villeParId = new Map(villes.map((v) => [v.id, v]));
   for (const v of villes) {
+    if (lieuParId.has(v.id)) continue;
     const gauche = v.etiquette === 'gauche';
     const el = element('div', `ville rang-${v.rang}${gauche ? ' gauche' : ''}`);
     el.dataset.ville = v.id;
     el.append(element('span', 'ville-point'), element('span', 'ville-nom', v.nom));
-    new maplibregl.Marker({ element: el, anchor: gauche ? 'right' : 'left', offset: [gauche ? 4 : -4, 0] }).setLngLat(versLngLat(v.coord)).addTo(carte);
+    new maplibregl.Marker({ element: el, anchor: gauche ? 'right' : 'left', offset: [gauche ? 4 : -4, 0] })
+      .setLngLat(versLngLat(v.coord))
+      .addTo(carte);
   }
 
-  // Zones (lieux de type « zone ») : un disque en pointillés.
-  const zones = [...new Set(jalons.map((e) => e.lieu))].map((id) => lieuParId.get(id)).filter((l) => l?.type === 'zone') as Lieu[];
+  // Couches dynamiques : zones, tracé en filigrane, tracé parcouru, tête du tracé.
+  let pret = false;
+  const majTrace = (u: number) => {
+    if (!pret) return;
+    const { parcouru, tete } = traceAu(u);
+    (carte.getSource('trace') as GeoJSONSource).setData(parcouru);
+    (carte.getSource('tete') as GeoJSONSource).setData({ type: 'Point', coordinates: tete });
+  };
+
   carte.on('load', () => {
+    const zones = lieux.filter((l) => l.type === 'zone');
     carte.addSource('zones', { type: 'geojson', data: { type: 'FeatureCollection', features: zones.map((z) => cercle(z)) } });
-    carte.addLayer({ id: 'zones-aplat', type: 'fill', source: 'zones', paint: { 'fill-color': '#8a2f1d', 'fill-opacity': 0.1 } });
+    carte.addLayer({ id: 'zones-aplat', type: 'fill', source: 'zones', paint: { 'fill-color': '#8a2f1d', 'fill-opacity': 0.07 } });
     carte.addLayer({
       id: 'zones-trait',
       type: 'line',
       source: 'zones',
-      paint: { 'line-color': '#8a2f1d', 'line-width': 1.2, 'line-dasharray': [2, 2] },
+      paint: { 'line-color': '#8a2f1d', 'line-width': 1, 'line-dasharray': [2, 2], 'line-opacity': 0.6 },
     });
+
+    carte.addSource('trace-complete', { type: 'geojson', data: TRACE_COMPLETE });
+    carte.addLayer({
+      id: 'trace-filigrane',
+      type: 'line',
+      source: 'trace-complete',
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': '#6b5640', 'line-width': 1.2, 'line-opacity': 0.3, 'line-dasharray': [1, 2] },
+    });
+
+    carte.addSource('trace', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    carte.addLayer({
+      id: 'trace-halo',
+      type: 'line',
+      source: 'trace',
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': '#f7eedb', 'line-width': ['interpolate', ['linear'], ['zoom'], 6, 4, 12, 7], 'line-opacity': 0.8 },
+    });
+    carte.addLayer({
+      id: 'trace',
+      type: 'line',
+      source: 'trace',
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': couleurParPhase, 'line-width': ['interpolate', ['linear'], ['zoom'], 6, 2, 12, 4] },
+    });
+    carte.addSource('tete', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    carte.addLayer({
+      id: 'tete',
+      type: 'circle',
+      source: 'tete',
+      paint: { 'circle-radius': 5, 'circle-color': '#f7eedb', 'circle-stroke-color': '#7a1616', 'circle-stroke-width': 2.5 },
+    });
+    pret = true;
+    majTrace(store.get().curseur);
   });
 
-  // Marqueurs des lieux jalons. Les lieux aux mêmes coordonnées (Golgotha et le
-  // tombeau, tous deux dans le Saint-Sépulcre) partagent un seul marqueur.
+  // Marqueurs : un par emplacement (Golgotha et le tombeau partagent le Saint-Sépulcre).
   const groupes = new Map<string, Lieu[]>();
-  for (const lieuId of new Set(jalons.map((e) => e.lieu))) {
-    const lieu = lieuParId.get(lieuId);
-    if (!lieu) continue;
+  for (const lieu of lieux) {
     const cle = lieu.coord.join(',');
     groupes.set(cle, [...(groupes.get(cle) ?? []), lieu]);
   }
 
-  const marqueurs: { el: HTMLElement; lieux: Set<string> }[] = [];
-  const popup = new maplibregl.Popup({ closeButton: false, offset: 16, className: 'popup-lieu' });
+  const marqueurs: { el: HTMLElement; lieux: Set<string>; premiere: number }[] = [];
+  const popup = new maplibregl.Popup({ closeButton: false, offset: 14, className: 'popup-lieu', maxWidth: '280px' });
   for (const groupe of groupes.values()) {
+    const ids = new Set(groupe.map((l) => l.id));
     const nom = groupe.map((l) => l.nom).join(' · ');
-    const etapesIci = jalons.filter((e) => groupe.some((l) => l.id === e.lieu));
+    const etapesIci = etapes.filter((e) => ids.has(e.lieu));
+    const jalon = etapesIci.some((e) => e.jalon);
     const debattu = groupe.some((l) => l.certitude === 'debattu');
-    const bouton = element('button', `marqueur certitude-${debattu ? 'debattu' : groupe[0].certitude}`) as HTMLButtonElement;
+    const ville = villeParId.get(groupe[0].id);
+    const classes = ['marqueur', jalon ? 'jalon' : 'simple', debattu ? 'certitude-debattu' : '', ville ? `rang-${ville.rang}` : ''];
+    const bouton = element('button', classes.filter(Boolean).join(' ')) as HTMLButtonElement;
     bouton.type = 'button';
     bouton.setAttribute('aria-label', `${nom} — ${etapesIci.map((e) => e.titre).join(', ')}`);
     bouton.append(element('span', 'marqueur-disque'));
@@ -117,10 +175,10 @@ export function creerCarte(conteneur: HTMLElement, store: Store) {
     bouton.addEventListener('click', (ev) => {
       ev.stopPropagation();
       if (etapesIci.length === 1) {
-        choisir(etapesIci[0].id);
+        actions.allerA(etapesIci[0].id);
         return;
       }
-      // Plusieurs jalons au même endroit (ex. mont des Oliviers) : on laisse choisir.
+      // Plusieurs étapes au même endroit (Jérusalem, Capharnaüm…) : on laisse choisir.
       const liste = element('div', 'choix-etapes');
       liste.append(element('div', 'choix-titre', nom));
       for (const e of etapesIci) {
@@ -129,44 +187,48 @@ export function creerCarte(conteneur: HTMLElement, store: Store) {
         b.append(element('span', 'choix-ordre', String(e.ordre)), document.createTextNode(e.titre));
         b.addEventListener('click', () => {
           popup.remove();
-          choisir(e.id);
+          actions.allerA(e.id);
         });
         liste.append(b);
       }
       popup.setLngLat(versLngLat(groupe[0].coord)).setDOMContent(liste).addTo(carte);
     });
     new maplibregl.Marker({ element: bouton, anchor: 'center' }).setLngLat(versLngLat(groupe[0].coord)).addTo(carte);
-    marqueurs.push({ el: bouton, lieux: new Set(groupe.map((l) => l.id)) });
-  }
-
-  function choisir(etapeId: string) {
-    const e = etapeParId.get(etapeId);
-    if (e) store.set({ etapeActive: e.id, annee: e.annee });
+    marqueurs.push({ el: bouton, lieux: ids, premiere: Math.min(...etapesIci.map((e) => indexDeEtape(e.id))) });
   }
 
   // --- Abonnements à l'état central ---
 
-  store.on('etapeActive', (id) => {
+  const majCurseur = (u: number) => {
+    majTrace(u);
+    // Un lieu est « à venir » tant qu'aucune de ses étapes n'est atteinte.
+    const { i } = positionAu(u);
+    for (const m of marqueurs) {
+      const aVenir = m.premiere > i;
+      m.el.classList.toggle('a-venir', aVenir);
+      m.el.title = aVenir ? `À venir (${formatAnnee(etapes[m.premiere].annee)})` : '';
+    }
+  };
+
+  const majEtape = (id: string | null, etat: EtatApp) => {
     const lieuActif = id ? etapeParId.get(id)?.lieu : undefined;
-    for (const { el, lieux } of marqueurs) el.classList.toggle('actif', !!lieuActif && lieux.has(lieuActif));
+    for (const { el, lieux: ids } of marqueurs) el.classList.toggle('actif', !!lieuActif && ids.has(lieuActif));
     const etape = id ? etapeParId.get(id) : undefined;
     const lieu = etape ? lieuParId.get(etape.lieu) : undefined;
     if (!lieu) return;
-    // Les lieux de la Passion sont à quelques centaines de mètres : on zoome davantage.
-    const zoom = etape!.phase === 'passion' || etape!.phase === 'resurrection' ? 12.5 : 10;
-    carte.flyTo({ center: versLngLat(lieu.coord), zoom, speed: 0.9, curve: 1.5, essential: true });
-  });
-
-  // Les lieux dont aucun jalon n'est encore atteint à l'année courante sont estompés.
-  const majAnnee = (annee: number) => {
-    for (const { el, lieux } of marqueurs) {
-      const premier = Math.min(...[...lieux].flatMap((id) => jalonsDuLieu(id).map((e) => e.annee)));
-      el.classList.toggle('a-venir', premier > annee);
-      el.title = premier > annee ? `À venir (${formatAnnee(premier)})` : '';
+    const centre = versLngLat(lieu.coord);
+    if (etat.lecture) {
+      // En lecture, la caméra glisse d'un lieu à l'autre sans plonger.
+      carte.easeTo({ center: centre, zoom: lieu.id === 'egypte' ? 6 : 7.6, duration: 1400, essential: true });
+      return;
     }
+    const zoom = lieu.id === 'egypte' ? 7 : distanceKm(lieu.coord, JERUSALEM) < 3 ? 12.5 : lieu.type === 'zone' ? 9.5 : 10.5;
+    carte.flyTo({ center: centre, zoom, speed: 0.9, curve: 1.5, essential: true });
   };
-  store.on('annee', majAnnee);
-  majAnnee(store.get().annee);
+
+  store.on('curseur', majCurseur);
+  store.on('etapeActive', majEtape);
+  majCurseur(store.get().curseur);
 
   return {
     carte,

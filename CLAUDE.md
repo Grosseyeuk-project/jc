@@ -35,7 +35,15 @@ Spécification complète : le doc « Sur les traces de Jésus — Cadrage » (cl
 
 Commandes : `npm run dev`, `npm test`, `npm run build`, `npm run geo` (re-télécharge les données géographiques).
 
-Jalons suivants : 2) curseur et tracé animé sur les 46 étapes ; 3) parcours guidé et annotations ; 4) mode comparer et zoom Passion ; 5) phase 2.
+## Deuxième jalon : curseur et tracé animé (fait)
+
+- `src/chronologie.ts` : échelle de la frise (1 unité par étape + 0,3 par année écoulée : l'enfance tient dans un petit tiers, le ministère occupe le reste).
+- `src/actions.ts` : gestes (aller à une étape, glisser, relâcher avec aimantation, précédente/suivante, lecture/pause). Curseur, année et étape active changent toujours ensemble.
+- `src/carte/trace.ts` : arcs doux d'une étape à la suivante (bombés à droite du sens de marche, pour distinguer les allers-retours), colorés par phase, résurrection en doré. Le voyage complet reste en filigrane.
+- `src/ui/frise.ts` : frise sous la carte (phases, graduation par étape, jalons cliquables, repères d'années, bouton lecture). Clavier : flèches = étape précédente/suivante, Début/Fin.
+- `lieux.json` couvre les 30 lieux des 46 étapes. Les lieux qui sont aussi des villes repères portent le nom de la ville.
+
+Jalons suivants : 3) parcours guidé et annotations ; 4) mode comparer et zoom Passion (plan de Jérusalem : les lieux s'y chevauchent encore) ; 5) phase 2.
 
 ## Points encore ouverts
 

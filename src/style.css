@@ -30,6 +30,13 @@ html, body {
   height: 100dvh;
 }
 
+#scene {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  min-height: 0;
+  min-width: 0;
+}
+
 #carte { position: relative; min-height: 0; }
 
 /* ---------- Panneau ---------- */
@@ -251,10 +258,18 @@ button:focus-visible { outline: 2px solid var(--rouge); outline-offset: 2px; }
   text-shadow: 0 0 2px var(--parchemin), 0 0 4px var(--parchemin), 0 0 6px var(--parchemin);
   pointer-events: none;
 }
-/* Autour de Jérusalem, les lieux se chevauchent en vue large : noms masqués sauf l'actif. */
-#carte[data-zoom='6'] .marqueur:not(.actif) .marqueur-nom,
-#carte[data-zoom='7'] .marqueur:not(.actif) .marqueur-nom,
-#carte[data-zoom='8'] .marqueur:not(.actif) .marqueur-nom { display: none; }
+/* Lieux secondaires : plus petits. */
+.marqueur.simple { width: 18px; height: 18px; }
+.marqueur.simple .marqueur-disque { inset: 3px; border-width: 1.5px; }
+.marqueur.simple .marqueur-nom { font-size: 13px; }
+
+/* En vue large, les lieux se chevauchent : seuls les noms des grandes villes et du lieu actif restent. */
+#carte[data-zoom='5'] .marqueur:not(.actif):not(.rang-1) .marqueur-nom,
+#carte[data-zoom='6'] .marqueur:not(.actif):not(.rang-1) .marqueur-nom,
+#carte[data-zoom='7'] .marqueur:not(.actif):not(.rang-1) .marqueur-nom,
+#carte[data-zoom='8'] .marqueur:not(.actif):not(.rang-1):not(.rang-2) .marqueur-nom { display: none; }
+.marqueur.rang-1 .marqueur-nom { color: var(--encre); font-size: 16px; }
+.marqueur.rang-2 .marqueur-nom { color: var(--encre); }
 
 @keyframes pulsation {
   0% { box-shadow: 0 0 0 0 rgba(138, 47, 29, 0.55); }
@@ -299,14 +314,191 @@ button:focus-visible { outline: 2px solid var(--rouge); outline-offset: 2px; }
 /* ---------- Mobile ---------- */
 
 @media (max-width: 760px) {
-  #app { grid-template-columns: 1fr; grid-template-rows: 58dvh 1fr; }
+  #app { grid-template-columns: 1fr; grid-template-rows: 64dvh 1fr; }
+  #frise { padding: 6px 12px 8px; gap: 10px; }
+  .frise-annee.serre, .frise-phase.phase-passion span, .frise-phase.phase-vers-jerusalem span { display: none; }
   #panneau { border-left: 0; border-top: 1px solid var(--bord); padding: 14px 16px 24px; }
   .entete h1 { font-size: 1.4rem; }
 }
 
-/* En zoom rapproché sur Jérusalem, les lieux de la Passion remplacent l'étiquette de la ville. */
-#carte[data-zoom='11'] .ville[data-ville='jerusalem'],
-#carte[data-zoom='12'] .ville[data-ville='jerusalem'],
-#carte[data-zoom='13'] .ville[data-ville='jerusalem'],
-#carte[data-zoom='14'] .ville[data-ville='jerusalem'],
-#carte[data-zoom='15'] .ville[data-ville='jerusalem'] { display: none; }
+
+/* ---------- Navigation précédente / suivante ---------- */
+
+.navigation { display: flex; justify-content: space-between; gap: 8px; margin: -8px 0 18px; }
+.navigation button {
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--sepia);
+  background: none;
+  border: 1px solid var(--bord);
+  border-radius: 16px;
+  padding: 3px 12px;
+  cursor: pointer;
+}
+.navigation button:hover:not(:disabled) { background: rgba(139, 94, 60, 0.1); }
+.navigation button:disabled { opacity: 0.4; cursor: default; }
+
+/* ---------- Frise ---------- */
+
+#frise {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 22px 10px;
+  background: var(--parchemin-clair);
+  border-top: 1px solid var(--bord);
+  user-select: none;
+}
+
+.frise-lecture {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid var(--rouge);
+  background: var(--parchemin-clair);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+}
+.frise-lecture:hover { background: rgba(138, 47, 29, 0.1); }
+/* Triangle de lecture, ou deux barres de pause. */
+.frise-lecture::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 12px;
+  border-style: solid;
+  border-width: 8px 0 8px 12px;
+  border-color: transparent transparent transparent var(--rouge);
+}
+.frise-lecture.en-lecture::before {
+  left: 13px;
+  top: 12px;
+  width: 4px;
+  height: 16px;
+  border: 0;
+  background: var(--rouge);
+  box-shadow: 8px 0 0 var(--rouge);
+}
+
+.frise-piste {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 62px;
+}
+
+/* Graduations décalées de la demi-largeur de la poignée, pour tomber pile sous elle. */
+.frise-phases { position: absolute; top: 0; left: 7px; right: 7px; height: 16px; }
+.frise-phase {
+  position: absolute;
+  top: 0;
+  height: 16px;
+  border-bottom: 2px solid var(--couleur);
+  overflow: hidden;
+}
+.frise-phase span {
+  display: block;
+  font-family: var(--titre);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 14px;
+  color: var(--couleur);
+  white-space: nowrap;
+  padding-left: 3px;
+  letter-spacing: 0.04em;
+}
+
+.frise-rail {
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  top: 30px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--bord);
+}
+.frise-parcouru {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--rouge);
+}
+
+.frise-etapes, .frise-jalons, .frise-annees { position: absolute; top: 0; bottom: 0; left: 7px; right: 7px; pointer-events: none; }
+.frise-etape {
+  position: absolute;
+  top: 27px;
+  width: 2px;
+  height: 9px;
+  margin-left: -1px;
+  background: var(--bord);
+}
+.frise-etape.atteinte { background: var(--couleur); }
+
+.frise-jalon {
+  position: absolute;
+  top: 24px;
+  width: 15px;
+  height: 15px;
+  margin-left: -7.5px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--couleur);
+  background: var(--parchemin-clair);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.2s;
+  z-index: 2;
+}
+.frise-jalon:hover, .frise-jalon.actif { transform: scale(1.3); background: var(--couleur); }
+
+.frise-annee {
+  position: absolute;
+  top: 44px;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: var(--encre-douce);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.frise-annee:first-child { transform: none; }
+
+/* Le curseur natif, rendu transparent sauf sa poignée. */
+.frise-curseur {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 20px;
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  z-index: 1;
+}
+.frise-curseur::-webkit-slider-runnable-track { height: 24px; background: transparent; }
+.frise-curseur::-moz-range-track { height: 24px; background: transparent; }
+.frise-curseur::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 24px;
+  border-radius: 7px;
+  background: var(--rouge);
+  border: 2px solid var(--parchemin-clair);
+  box-shadow: 0 1px 3px rgba(59, 42, 26, 0.5);
+}
+.frise-curseur::-moz-range-thumb {
+  width: 10px;
+  height: 20px;
+  border-radius: 7px;
+  background: var(--rouge);
+  border: 2px solid var(--parchemin-clair);
+  box-shadow: 0 1px 3px rgba(59, 42, 26, 0.5);
+}
+.frise-curseur:focus-visible { outline: none; }
+.frise-curseur:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--rouge); outline-offset: 2px; }
+.frise-curseur:focus-visible::-moz-range-thumb { outline: 2px solid var(--rouge); outline-offset: 2px; }

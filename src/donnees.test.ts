@@ -31,15 +31,15 @@ describe('etapes.json', () => {
 });
 
 describe('lieux.json', () => {
-  it('couvre tous les lieux des jalons', () => {
-    for (const e of jalons) expect(lieuParId.has(e.lieu), e.lieu).toBe(true);
+  it('couvre tous les lieux des 46 étapes, et rien de plus', () => {
+    expect(new Set(lieux.map((l) => l.id))).toEqual(new Set(etapes.map((e) => e.lieu)));
   });
 
   it('reprend une certitude indiquée dans etapes.json pour ce lieu', () => {
     // Un même lieu peut avoir des certitudes différentes selon l'étape
     // (mont des Oliviers : certain pour l'entrée à Jérusalem, probable pour l'Ascension).
-    for (const e of jalons) {
-      const certitudes = jalons.filter((j) => j.lieu === e.lieu).map((j) => j.certitude_lieu);
+    for (const e of etapes) {
+      const certitudes = etapes.filter((j) => j.lieu === e.lieu).map((j) => j.certitude_lieu);
       expect(certitudes, e.lieu).toContain(lieuParId.get(e.lieu)!.certitude);
     }
   });
@@ -73,7 +73,7 @@ describe('formatAnnee', () => {
 
 describe('store', () => {
   it('prévient les abonnés seulement quand une valeur change', () => {
-    const s = creerStore({ annee: 0, etapeActive: null, mode: 'explorer' });
+    const s = creerStore({ annee: 0, curseur: 0, etapeActive: null, lecture: false, mode: 'explorer' });
     const vus: (string | null)[] = [];
     s.on('etapeActive', (v) => vus.push(v));
     s.set({ annee: 5 });
@@ -84,7 +84,7 @@ describe('store', () => {
   });
 
   it('permet de se désabonner', () => {
-    const s = creerStore({ annee: 0, etapeActive: null, mode: 'explorer' });
+    const s = creerStore({ annee: 0, curseur: 0, etapeActive: null, lecture: false, mode: 'explorer' });
     let n = 0;
     const stop = s.subscribe(() => n++);
     s.set({ mode: 'comparer' });

@@ -1,13 +1,17 @@
-// État central de l'application. La carte, le panneau et (plus tard) la frise
-// s'y abonnent ; aucun composant ne se parle directement.
+// État central de l'application. La carte, la frise et le panneau s'y abonnent ;
+// aucun composant ne se parle directement.
 
 export type Mode = 'explorer' | 'parcours' | 'comparer';
 
 export interface EtatApp {
   /** Année affichée (négative = av. J.-C., 0 = Nativité par convention). */
   annee: number;
+  /** Position du curseur sur la frise (échelle de chronologie.ts). */
+  curseur: number;
   /** Identifiant de l'étape sélectionnée, ou null. */
   etapeActive: string | null;
+  /** Lecture automatique du tracé en cours. */
+  lecture: boolean;
   mode: Mode;
 }
 
@@ -47,8 +51,3 @@ export function creerStore(initial: EtatApp): Store {
     },
   };
 }
-
-export const ANNEE_DEBUT = -1;
-export const ANNEE_FIN = 30;
-
-export const store = creerStore({ annee: ANNEE_DEBUT, etapeActive: null, mode: 'explorer' });
